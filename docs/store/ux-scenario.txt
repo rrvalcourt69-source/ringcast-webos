@@ -1,0 +1,128 @@
+RingCast: UX scenario (content for LG's UX Scenario template)
+=============================================================
+
+App: RingCast (com.netringtech.ringcast) 0.2.0, standard LG webOS TVs, webOS 5 and later
+Resolution: 1920x1080. Languages: English (default), Spanish (follows the TV's language).
+Copy each section into the matching part of LG's template.
+
+
+1. App overview
+---------------
+RingCast turns the TV into a digital signage screen for NetRing Signage Manager, a signage
+server an organisation runs for itself. The app has four kinds of screens: the server address,
+the pairing code, a short "Screen added" notice, and the content player (full screen). Setup
+is done once; afterwards the app only plays. There are no menus, lists, accounts or settings
+screens.
+
+
+2. Screen list
+--------------
+ID  Screen                     Shown when                                        Controls
+S1  Splash                     at launch (webOS, appinfo.json splashBackground)   none
+S2  Server address             first launch (no server saved); or chosen from    address field, Connect
+                               S3/S4/S5
+S3  Connecting                 while the address is checked                      "change the server
+                                                                                 address" button
+S4  Pairing code               server accepted, screen not yet added             "change the server
+                                                                                 address" button
+S5  Message                    the server can't be reached or refuses (with the  "change the server
+                               reason; retries by itself)                        address" button
+S6  Screen added               for 60 seconds after an administrator added the   none
+                               screen in the dashboard
+S7  Playing                    content from the server, full screen; an          none
+                               "Offline" marker in the corner while the network
+                               is down (content keeps playing)
+
+Flow: S1 → S2 → S3 → S4 → S6 → S7. Later launches: S1 → S7 (or S4 when not paired yet).
+S4/S5 → (OK or BLUE) → S2 pre-filled → BACK → S4/S5.
+
+
+3. Keys on every screen
+-----------------------
+Magic Remote pointer   The control under the pointer takes the focus (cyan ring); OK clicks
+                       it. OK over an empty area does nothing. The wheel has nothing to
+                       scroll (no lists). On S7 the pointer does nothing: content isn't
+                       interactive.
+Arrow keys             Move the focus between the controls of the screen (S2: field and
+                       Connect). Moving with the arrows hides the pointer (webOS).
+OK                     Selects the focused control.
+BACK                   S2 opened from S4/S5: back to S4/S5, the server is kept.
+                       S2 on first launch, S3, S4, S5, S6: leaves the app (first screen of
+                       the app); the next launch continues where it was.
+                       S7: leaves the app (see section 5). With the on-screen keyboard
+                       open, BACK only closes the keyboard.
+EXIT                   Closes the app (handled by webOS). The pairing is kept.
+HOME                   Opens the webOS home screen (handled by webOS); the app keeps its
+                       state in the background.
+BLUE                   S3, S4, S5: same as OK on the button (change the server address).
+RED, GREEN, YELLOW,    Do nothing on every screen.
+number keys, INFO
+Volume, mute, channel  Handled by the TV; the app does not use them.
+
+
+4. Screen by screen
+-------------------
+S2 Server address
+  Elements: title "Connect to your signage server", the address field (pre-filled
+  "https://"), the Connect button, an example address, a key hint line, and at the bottom
+  the app version, platform and TV model.
+  Focus starts on the field. OK opens the TV's on-screen keyboard; "Done"/OK on the keyboard
+  closes it and moves the focus to Connect. OK on Connect checks the address. Arrow DOWN or
+  RIGHT goes to Connect, UP or LEFT back to the field.
+  Wrong address: the reason is shown under the field in plain words (not https, an IP
+  address or local name, server unreachable or its certificate not trusted, not a signage
+  server). The focus stays on the screen; correct the address and press Connect again.
+
+S3 Connecting
+  "Connecting to <server>…" while a server address supplied with the app is checked (signage
+  installs) or while pairing starts. Without a network it gives up after about 30 seconds
+  and shows S2 or S5 with the reason.
+
+S4 Pairing code
+  A large code such as HXRT-2B99 and "Enter this code in NetRing Signage Manager,
+  Screens → Add Screen". A new code appears by itself when one expires. The button at the
+  bottom left (focused) changes the server address.
+
+S5 Message
+  Title and reason (for example "Can't reach the server"), and "Retrying in N s…". The app
+  retries by itself (every 5 seconds at first, up to every 5 minutes).
+
+S6 Screen added
+  "Screen added", the screen's name, "Claimed by <account>", the server, and a countdown of
+  60 seconds before playing starts. No keys needed.
+
+S7 Playing
+  The server's content full screen. No on-screen controls. A small "Offline" marker appears
+  in the bottom right corner (inside the safe area) while the server can't be reached; the
+  content keeps playing and the marker goes away when the server answers again.
+
+
+5. BACK on the playing screen (S7)
+----------------------------------
+S7 is the app's main screen once set up, and it has no previous screen, so BACK leaves the
+app the webOS way (the TV shows what it showed before, or the home screen). The pairing is
+kept: opening RingCast again plays at once.
+
+On a TV used as signage, the organisation's server can bring RingCast back to the front: when
+an administrator has connected "TV control" for that screen in the server's dashboard (it
+uses LG Connect Apps on the TV), the server reopens RingCast within about 10 seconds whenever
+another app or input is in front. Without that connection (as on a test TV) RingCast stays in
+the background until it is opened again. This is the organisation's choice, made on its
+server; the app itself never starts on its own.
+
+LG webOS Signage displays use a separate package (not the store app), where BACK on S7 is
+ignored because those displays play unattended.
+
+
+6. Resilience
+-------------
+No network at launch    Not set up yet: S2 works as usual; Connect explains "Can't reach
+                        <server>" under the field. Set up: S7 with the "Offline" marker and
+                        the reason the player can't start; retries by itself and plays as
+                        soon as the server answers. While pairing: S4/S5 retry by themselves.
+                        No hang, no blank screen, and BACK, EXIT and HOME always work.
+Network lost while      Content keeps playing, "Offline" marker; recovers by itself.
+playing
+TV power off/on, unplug The pairing is saved on the TV. On the next launch the app goes
+                        straight to S7 (or S4 if it wasn't added yet).
+HOME and back           The app resumes where it was.

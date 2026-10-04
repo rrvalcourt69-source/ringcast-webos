@@ -1,0 +1,86 @@
+RingCast for LG webOS: privacy policy
+=====================================
+
+To be published at: https://netringtech.com/signage/privacy  <confirm the address before
+entering it in the Seller Lounge>
+Last updated: <date of publication>
+
+Publisher: NetRing Tech Services, LLC, Smithfield, Rhode Island, USA.
+Contact: <SUPPORT E-MAIL: confirm>
+
+RingCast is an app that turns an LG TV or LG signage display into a screen for NetRing
+Signage Manager, a signage server that an organisation runs for itself. This policy explains
+what the app stores and sends.
+
+
+1. Summary
+----------
+- The app does not collect personal data. It has no user accounts, sign-in, payments,
+  advertising, analytics or tracking, and it uses no third-party services.
+- It talks only to the signage server whose address is entered on the TV (or supplied by that
+  server when the app was installed from it). NetRing Tech Services receives nothing from the
+  app, unless NetRing Tech Services is the organisation running that server.
+- The organisation running the server decides what the screen shows and is responsible for
+  the server and its data.
+
+
+2. What the app stores on the TV
+--------------------------------
+In the app's own storage on the TV, which other apps can't read:
+- a key pair created on the TV to identify the screen to its server (the private key never
+  leaves the TV);
+- the access token the server issues when an administrator adds the screen;
+- the server's address, and the screen's id and name on that server;
+- the ids of the last commands the server sent (so a command never runs twice).
+Removing the screen on the server, or the server's unpair command, deletes the token and the
+screen's id from the TV. Deleting the app deletes everything it stored.
+
+
+3. What the app sends, and to whom
+----------------------------------
+Only to the signage server entered on the TV, over an encrypted connection (https):
+- the screen's public key and a pairing request (to show a pairing code);
+- technical details of the screen: TV model, webOS version, app version and platform,
+  screen size and orientation, how long the app has been running, the TV's network (IP)
+  address, the TV's network hardware (MAC) address where the TV allows the app to read it,
+  and error codes from the app;
+- results of commands the server sent (for example "refresh done").
+The server uses these details to show the screen in its dashboard, to deliver content, and on
+standard LG TVs to bring the app back to the front and to switch the TV on (wake-on-LAN).
+
+The content the screen plays is a web page from the same server, shown inside the app. That
+page may set a cookie that keeps the screen's player session; it is sent only to that server.
+
+The app sends nothing to NetRing Tech Services, LG or anyone else.
+
+
+4. Where data is kept
+---------------------
+On the TV (section 2) and on the signage server the organisation runs, in the place the
+organisation chooses. NetRing Tech Services does not host these servers unless it has a
+separate agreement with the organisation to do so.
+
+
+5. Sharing
+----------
+The app shares no data with third parties. It contains no advertising or analytics code.
+
+
+6. Children
+-----------
+The app is a tool for businesses and organisations and is not directed at children.
+
+
+7. Your choices
+---------------
+- To stop the app sending anything, remove the screen in the server's dashboard, or delete
+  the app from the TV.
+- Questions about the content a screen shows, or about data held on a signage server, go to
+  the organisation that runs that server.
+- Questions about the app itself: <SUPPORT E-MAIL: confirm>.
+
+
+8. Changes
+----------
+If the app starts storing or sending anything new, this policy is updated before that version
+is released, and the date at the top changes.

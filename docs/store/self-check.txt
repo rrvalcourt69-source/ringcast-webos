@@ -1,0 +1,102 @@
+RingCast: self-check list answers (LG self-check list v5.0)
+==========================================================
+
+App: RingCast (com.netringtech.ringcast) 0.2.0, package ringcast-webos-0.2.0-lg-tv.ipk.
+The items below follow the topics of LG's self-check list; enter each answer against the
+matching item number in LG's sheet. "Verified" says how it was checked: (T) on the owner's
+LG 43UN7000PUB, webOS 5.6; (A) automated tests in this repository (npm test, the browser test
+tests/e2e_screens.py, tools/build.sh checks); (R) to re-check on the TV with 0.2.0 before
+submitting.
+
+
+Package and metadata
+--------------------
+Item                                        Answer  Reason / verified
+App ID, version, vendor in appinfo.json     Pass    com.netringtech.ringcast 0.2.0 (A)
+requiredACG declared                        Pass    network.query, systemconfig.query; every
+                                                    service call maps to one of them (A)
+Icon >= 400x400, background = tile colour   Pass    icon-400.png, #0A1A2F full bleed; app icons
+                                                    80x80 and 130x130 in the same colour (A)
+Splash image 1920x1080, not black           Pass    splash.png, navy with the mark and the name (A)
+Screenshots 1920x1080, up to 6              Pass    5 screenshots (A)
+App title and descriptions match the app    Pass    listing.txt
+Default language English                    Pass    English; Spanish when the TV is set to
+                                                    Spanish (A)
+Resolution 1920x1080                        Pass    appinfo.json "resolution"; the layout scales
+                                                    to the window (A)
+No external links, no web browsing          Pass    The app opens only its server's player page,
+                                                    inside the app (A)
+
+
+Launch and exit
+---------------
+App launches without error                  Pass    (T, R)
+Launch time / splash shown                  Pass    splash from appinfo.json (R)
+BACK on the first screen leaves the app     Pass    platformBack (A, R)
+BACK goes to the previous screen            Pass    address screen opened from pairing → back to
+                                                    pairing (A)
+BACK on the main (playing) screen           Pass    leaves the app; documented in the UX
+                                                    scenario §5 (A, R)
+EXIT terminates the app                     Pass    handled by webOS; the app doesn't intercept
+                                                    it (R)
+HOME / relaunch resumes                     Pass    handled by webOS; state kept (R)
+
+
+Remote control and Magic Remote
+-------------------------------
+5-way keys move the focus                   Pass    (A, T)
+OK selects                                  Pass    (A, T)
+Focus always visible                        Pass    cyan ring on every control (A)
+Magic Remote pointer works                  Pass    hover focuses the control under the pointer;
+                                                    OK clicks it; OK over an empty area does
+                                                    nothing (A, R)
+Wheel scrolls lists                         N/A     The app has no lists or scrolling content.
+Colour keys                                 Pass    BLUE: change the server address on setup
+                                                    screens; RED/GREEN/YELLOW do nothing (A)
+Number keys                                 Pass    do nothing (A)
+Volume / mute / channel keys                Pass    left to the TV (A)
+On-screen keyboard                          Pass    opens on the address field; BACK closes it
+                                                    (T)
+
+
+Display
+-------
+Overscan-safe layout                        Pass    every app element at least 5% from each edge
+                                                    (96 px / 54 px); only content is full screen
+                                                    (A)
+Text readable at TV distance                Pass    28 px and larger at 1920x1080; only the
+                                                    small "Offline" marker is 22 px (A)
+No black or blank screen while waiting      Pass    every waiting state has a message (A)
+
+
+Stability
+---------
+No network at launch                        Pass    explains the problem, retries, no hang (A, R)
+Network lost and restored                   Pass    content keeps playing, "Offline" marker,
+                                                    recovers by itself (A, R)
+TV power off/on                             Pass    setup kept in the app's storage (T, R)
+Power unplugged                             Pass    as above (R)
+Long running                                Pass    plays unattended; check-in every 30 s with
+                                                    back-off (T)
+Errors shown to the user                    Pass    plain-language reasons, no raw stack traces
+                                                    (A)
+
+
+Content, accounts, payments, privacy
+------------------------------------
+Login / account in the app                  N/A     None. The administrator signs in to the
+                                                    signage server in a web browser, not on
+                                                    the TV (test account in test-info.txt).
+In-app payment, subscriptions               N/A     None.
+Advertising                                 N/A     None.
+Video and audio playback                    Pass    played by the server's content page inside
+                                                    the app (autoplay allowed) (T)
+Privacy policy                              Pass    privacy-policy.txt, to publish at
+                                                    https://netringtech.com/signage/privacy
+Personal data collection                    N/A     No personal data; technical screen data only
+                                                    to the organisation's own server
+                                                    (uk-data-disclosure.txt)
+Age rating                                  -       Suggested: suitable for all ages (no content
+                                                    of its own).
+Open-source licences                        Pass    AGPL-3.0 (LICENSE.txt in the package);
+                                                    TweetNaCl-js public domain (js/vendor/)

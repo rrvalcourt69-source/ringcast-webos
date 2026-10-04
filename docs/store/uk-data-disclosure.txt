@@ -1,0 +1,47 @@
+RingCast: UK data disclosure answers (Seller Lounge)
+===================================================
+
+App: RingCast (com.netringtech.ringcast) 0.2.0
+Privacy policy URL: https://netringtech.com/signage/privacy  <confirm, publish privacy-policy.txt there first>
+
+
+Does the app collect personal data?
+  No personal data about people. The app collects technical data about the screen, sent only
+  to the signage server the TV is connected to (run by the organisation using the screen,
+  not by NetRing Tech Services or LG).
+
+Data collected, and why
+  Device identifiers: a public key created on the TV; the TV's MAC address where the TV
+    allows it. Purpose: to identify the screen to its own signage server and show its pairing
+    code; on standard TVs, to switch the TV on with wake-on-LAN.
+  Network data: the TV's local IP address. Purpose: the signage server reaches the TV on the
+    local network to keep the app in front.
+  Device information: TV model, webOS version, app version, screen size and orientation,
+    running time, app error codes. Purpose: shown to the screen's administrator in the
+    server's dashboard for support, and to deliver content that fits the screen.
+  Not collected: name, e-mail, phone, location, contacts, photos, audio, camera, viewing
+    habits, payment data, advertising ids, analytics.
+
+Data stored on the TV
+  The key pair, the server's access token for this screen, the server address, the
+  screen's id and name, and the ids of recent server commands (in the app's own storage).
+
+Shared data (third parties)
+  None. The app sends data only to the signage server entered on the TV; it contains no
+  advertising, analytics or other third-party services, and sends nothing to NetRing Tech
+  Services or LG.
+
+Storage location
+  On the TV, and on the signage server chosen by the organisation using the screen (a
+  self-hosted server; its location is that organisation's choice).
+
+Encryption in transit
+  Yes: https only, with a certificate from a public certificate authority.
+
+Can users ask for deletion?
+  Yes: removing the screen in the server's dashboard deletes the access token on the TV and
+  the screen on the server; deleting the app removes everything it stored on the TV.
+
+Retention
+  On the TV: until the screen is removed or the app is deleted. On the server: as the
+  organisation running it decides.

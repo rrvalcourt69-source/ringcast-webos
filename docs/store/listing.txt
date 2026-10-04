@@ -1,0 +1,112 @@
+RingCast: LG Content Store listing (Seller Lounge, "Service Info" and "App Info")
+================================================================================
+
+App ID           com.netringtech.ringcast
+Version          0.2.0
+Package          ringcast-webos-0.2.0-lg-tv.ipk (the lg-signage packages are not for the store)
+Default language English; Spanish also shipped (the app follows the TV's language)
+App Tile Color   #0A1A2F (dark navy). The icon (icon-400.png) and the app's own icons fill
+                 their square with this colour, so the tile and the icon match.
+Resolution       1920x1080
+
+
+Title
+-----
+EN  RingCast
+ES  RingCast
+
+
+Short description (one line)
+----------------------------
+EN  Turn this TV into a digital signage screen for your NetRing Signage Manager server.
+ES  Convierta este televisor en una pantalla de señalización digital para su servidor NetRing
+    Signage Manager.
+
+
+Long description
+----------------
+EN
+RingCast turns an LG TV into a digital signage screen managed from NetRing Signage Manager,
+a self-hosted signage server for businesses: lobby screens, menu boards, notices and
+schedules.
+
+How it works:
+1. Enter the address of your organisation's signage server (for example
+   https://signage.example.com).
+2. The TV shows a pairing code. An administrator adds the screen in the server's dashboard
+   with that code.
+3. The TV plays whatever the server assigns to it, full screen, and keeps playing if the
+   network drops for a while.
+
+Requirements: a NetRing Signage Manager server reachable from the TV, with a certificate
+from a public certificate authority. RingCast does not include content or a server of its
+own and is not useful without one.
+
+No accounts, payments or advertising in the app. The app collects no personal data: it
+stores its pairing with the server on the TV and sends technical details of the screen (model,
+software version, network address) only to the server you enter.
+
+ES
+RingCast convierte un televisor LG en una pantalla de señalización digital gestionada desde
+NetRing Signage Manager, un servidor de señalización autoalojado para empresas: pantallas de
+recepción, cartas de menú, avisos y horarios.
+
+Cómo funciona:
+1. Introduzca la dirección del servidor de señalización de su organización (por ejemplo
+   https://signage.example.com).
+2. El televisor muestra un código de vinculación. Un administrador añade la pantalla en el
+   panel del servidor con ese código.
+3. El televisor reproduce a pantalla completa lo que el servidor le asigna, y sigue
+   reproduciendo aunque la red se corte un rato.
+
+Requisitos: un servidor NetRing Signage Manager accesible desde el televisor, con un
+certificado de una autoridad de certificación pública. RingCast no incluye contenido ni un
+servidor propio y no es útil sin uno.
+
+La aplicación no tiene cuentas, pagos ni publicidad. No recoge datos personales: guarda en el
+televisor su vinculación con el servidor y envía datos técnicos de la pantalla (modelo,
+versión del software, dirección de red) solo al servidor que usted introduce.
+
+
+Category (suggestion)
+---------------------
+Utility. If the Seller Lounge offers a business or productivity category for the target
+countries, prefer that one.
+
+
+Tag keywords
+------------
+digital signage, signage, display, screen, kiosk, menu board, lobby, notice board, business,
+NetRing, RingCast
+
+ES: señalización digital, cartelería digital, pantalla, quiosco, menú, recepción, avisos
+
+
+Seller and contact (fill in, then delete this line)
+---------------------------------------------------
+Seller            NetRing Tech Services, LLC
+Support e-mail    <SUPPORT E-MAIL: confirm, for example support@netringtech.com>
+Website           https://netringtech.com/signage  <confirm the page exists>
+Privacy policy    https://netringtech.com/signage/privacy  <publish privacy-policy.txt there first>
+
+
+What the app needs (for reviewers and for the listing)
+------------------------------------------------------
+- A NetRing Signage Manager server (self-hosted by the organisation) with a public
+  certificate. For the review: https://mysignage.netring.net (see test-info.txt).
+- An internet or LAN connection from the TV to that server.
+- Nothing else: no account in the app, no sign-in on the TV, no payments, no in-app
+  purchases, no advertising, no analytics, no third-party services.
+
+
+Images in this folder
+---------------------
+icon-400.png                          app icon, 400x400, background #0A1A2F
+splash-1920x1080.png                  the splash (same file as appinfo.json "splashBackground")
+screenshots/1-playing.png             1920x1080, first: shown on the Apps main screen on webOS 6+
+screenshots/2-pairing.png             1920x1080
+screenshots/3-screen-added.png        1920x1080
+screenshots/4-server-address.png      1920x1080
+screenshots/5-server-address-es.png   1920x1080 (Spanish)
+All artwork is original (tools/make_icons.py); the screenshots are the app itself against a
+test server with sample content.
