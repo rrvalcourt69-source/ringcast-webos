@@ -36,6 +36,8 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parent.parent
 # RINGCAST_APP_DIR: test an unpacked package instead of the source tree (tools/build.sh output)
 APP_DIR = Path(os.environ.get("RINGCAST_APP_DIR") or ROOT / "app").resolve()
+# the platform the tested files were built for (the source tree reports lg-tv)
+PLATFORM = "lg-signage" if 'platform: "lg-signage"' in (APP_DIR / "js" / "config.js").read_text() else "lg-tv"
 PORT = 8443
 HOST = "signage.example.com"
 ORIGIN = f"https://{HOST}:{PORT}"
@@ -395,7 +397,7 @@ def main(out):
                 time.sleep(4)                                # at least one signed poll
                 page.screenshot(path=str(out / "2-pairing.png"))
                 req = next(iter(S.pairings.values()))["request"]
-                check(req.get("platform") == "lg-tv" and req.get("capabilities") == ["refresh", "restart_player",
+                check(req.get("platform") == PLATFORM and req.get("capabilities") == ["refresh", "restart_player",
                       "set_orientation", "unpair"], "pair/request carries platform and capabilities")
                 check("mac_address" not in req, "no MAC address without the webOS bus")
                 # BLUE: change server, BACK: keep it
@@ -441,14 +443,17 @@ def main(out):
                 check(S.pages_served >= 1, "player page loaded in the frame with its cookie")
                 check(S.pages_refused == 0, "the frame's cookie was accepted")
                 page.screenshot(path=str(out / "4-playing.png"))
-                # BACK while playing (standard TV): the app leaves the platform's way, nothing else
+                # BACK while playing: a standard TV leaves the platform's way, a signage display ignores it
                 n_back = page.evaluate("window.__rcBack")
                 hover(page, "#s-player")                    # the pointer over the content
                 page.mouse.click(960, 540)
                 check(page.evaluate("document.activeElement.tagName") != "IFRAME", "the player frame never takes the focus")
                 back_key(page)
                 time.sleep(1)
-                check(page.evaluate("window.__rcBack") == n_back + 1, "BACK while playing calls platformBack")
+                if PLATFORM == "lg-tv":
+                    check(page.evaluate("window.__rcBack") == n_back + 1, "BACK while playing calls platformBack")
+                else:
+                    check(page.evaluate("window.__rcBack") == n_back, "BACK while playing is ignored on a signage display")
                 check(page.is_visible("#s-player") and page.evaluate("localStorage.getItem('rc.token')") is not None,
                       "BACK while playing keeps the pairing and the player")
                 frame_attrs = page.evaluate("""(() => { var f = document.querySelector('#frame-box iframe');
