@@ -1,0 +1,381 @@
+# RingCast device protocol: version 1 (draft 3)
+
+How a RingCast client (screen) pairs with and talks to a server. Both servers
+implement it identically: **RingCast.io** (hosted) and **NetRing Signage Manager**
+(self-hosted). This file is identical in both repositories
+(`netring-signage-manager/docs/PROTOCOL.txt`, `ringcast-client/docs/PROTOCOL.txt`,
+`ringcast-webos/docs/PROTOCOL.txt`); change it in all of them, and bump the version for any
+incompatible change. Additions that older clients and servers can ignore are new drafts of the
+same version.
+
+| Draft | Date | Change |
+|---|---|---|
+| 1 | 2026-10-02 | First version (replaces `PAIRING_FLOW.txt`) |
+| 3 | 2026-10-04 | LG webOS screens: `platform` and `capabilities`, pairing without a MAC address, CORS for app-based clients, the player in an app frame (§5.3), server-side control of standard LG TVs (§9). Pis and older servers are unaffected. |
+| 2 | 2026-10-02 | Security review fixes (two review rounds): signed pairing request, token issued at first signed poll and stored only as a hash, key-signed token renewal/recovery, two-step claim with mandatory MAC suffix and longer cloud codes, name-constrained private CA for self-hosted servers, signed client updates, command delivery rules, token and key moved to `/var/lib/ringcast`, separate web-engine user |
+
+---
+
+## 1. Conventions
+
+- HTTPS only. JSON bodies (UTF-8) of at most **64 KB** (`413 too_large` otherwise); every JSON
+  body is an object (`400 bad_request` otherwise). Times are Unix **milliseconds** unless named `*_s`.
+- All device endpoints live under `/api/device/v1/` and use only the characters `A–Z a–z 0–9 / _ - .`
+  in their paths (so the path a device signs is the path the server sees; reverse proxies must
+  pass it unchanged and must overwrite `X-Real-IP` with the real client address).
+- Every device request sends `X-RingCast-Protocol: 1`, except `time`, `ca.crt` and the player
+  page under `play/` (loaded by the web engine, which can't add headers)
+  (`400 bad_request` without it) and, where the platform allows it,
+  `User-Agent: RingCastClient/<client_version> (<tier>)` (an app in a web engine can't set it).
+- **CORS.** App-based clients (LG webOS) call the device endpoints from their own page, not from
+  the server's site. Every `/api/device/v1/` endpoint except `play/` answers `OPTIONS` and adds
+  `Access-Control-Allow-Origin: *`, `Access-Control-Allow-Headers: Authorization, Content-Type,
+  X-RingCast-Protocol, X-RingCast-Key-Id, X-RingCast-Timestamp, X-RingCast-Nonce,
+  X-RingCast-Signature` and `Access-Control-Allow-Methods: GET, POST, PUT`, never
+  `Allow-Credentials`. This is safe because device endpoints authenticate with a Bearer token or a
+  signature, never with cookies.
+- Errors: HTTP status plus `{"error": "<code>", "message": "<human text>"}`. Clients act on
+  `error`, never on `message`.
+- `426 protocol_unsupported`: the server doesn't speak this version. The client shows
+  "Server needs updating" and retries hourly.
+- `429 rate_limited` and `503 busy` carry `Retry-After` (seconds). Clients must honour it.
+- Clients treat every server value as untrusted: strings are shown as text only and clipped,
+  numbers are clamped to the ranges given here, unexpected types are errors.
+
+## 2. Client configuration: `/etc/ringcast/client.conf` (Raspberry Pi)
+
+```ini
+[server]
+mode = local                   ; cloud | local
+hostname = signage.example.com ; cloud mode: devices.ringcast.io
+tls = system                   ; system | private-ca
+ca_sha256 = 3F:9A:…            ; private-ca only: fingerprint of the server's CA certificate
+
+[device]
+tier = pi5                     ; pi5 | pi4  (auto-detected, confirmed at setup)
+```
+
+LG webOS screens keep the server address in the app's own storage and support only servers with
+a publicly trusted certificate (they can't add a CA).
+
+**TLS.** `system` uses the OS trust store (public CA, or a company CA already deployed).
+`private-ca` is for self-hosted servers without a public certificate. The server's installer
+creates a private CA that is **name-constrained to the server's hostname**
+(`nameConstraints = critical, permitted;DNS:<host>`), valid 20 years, and issues the server's
+certificate from it; the installer prints the CA's SHA-256 fingerprint. At client setup the CA
+is downloaded from `GET /api/device/v1/ca.crt`, accepted only if its fingerprint matches the one
+entered (or confirmed on screen) and it carries that name constraint, then installed into the OS
+trust store. Because of the constraint, the CA can't vouch for any other site. Server
+certificates can be renewed from the same CA without touching any screen. Certificate checking
+is never switched off.
+
+## 3. Pairing
+
+```
+Device                                   Server                          Admin (dashboard)
+  │ 1. first boot: create Ed25519 key       │                                  │
+  │ 2. POST pair/request (signed) ────────▶ │ pending pairing (15 min)         │
+  │ ◀──── {pairing_id, code, server_name}   │                                  │
+  │ 3. show code full screen                │                                  │
+  │ 4. POST pair/status (signed) ─────────▶ │                                  │
+  │ ◀──── 200 {status: "waiting"}           │                                  │
+  │              … every poll_interval …    │ ◀── 5a. look up code ────────────┤
+  │                                         │ ──── model, MAC, IP, hostname ──▶│
+  │                                         │ ◀── 5b. confirm + name ──────────┤
+  │ 6. POST pair/status (signed) ─────────▶ │ issue token, store its hash      │
+  │ ◀── 200 {status:"claimed", device_token, name, account_name}               │
+  │ 7. save token, show "Claimed by …" 60 s, start player                      │
+  │ 8. POST checkin (Bearer) ─────────────▶ │ pairing record deleted           │
+```
+
+### 3.1 `POST /api/device/v1/pair/request` (signed, §6, Key-Id = key fingerprint)
+
+```json
+{ "protocol": 1,
+  "pubkey": "ssh-ed25519 AAAAC3Nza… ringcast-device",
+  "mac_address": "d8:3a:dd:12:2b:99",
+  "model": "Raspberry Pi 5 Model B Rev 1.0",
+  "tier": "pi5",
+  "client_version": "0.2.0",
+  "hostname": "ringcast-2b99",
+  "platform": "pi",
+  "capabilities": ["reboot", "restart_player", "refresh", "screenshot", "update_client",
+                   "set_orientation", "unpair", "set_server"] }
+```
+
+- `platform` (optional, default `pi`): `pi`, `lg-signage` (LG webOS Signage display) or `lg-tv`
+  (standard LG webOS TV). Unknown values give `400 bad_request`.
+- `capabilities` (optional): the command types of §5.2 the screen can carry out, at most 20
+  strings of at most 32 characters; unknown types are ignored. Without it, a `pi` screen can do
+  every command and any other platform only `refresh`, `restart_player`, `set_orientation` and
+  `unpair`. The server never queues a command the screen can't do.
+- `mac_address` is required for `pi`. Other platforms send it when the platform reveals it; when
+  they can't, they leave it out and the code suffix comes from the key instead (below).
+- `tier` is free text of at most 10 characters for non-Pi platforms (for example `webos5`);
+  `model` should name the display (for example `LG 43UN7000PUB`).
+
+The **key fingerprint** is the lower-case hex SHA-256 of the raw 32-byte Ed25519 public key.
+Signing proves the caller holds the key, so nobody can register or cancel pairings for a key
+they don't own.
+
+`201`:
+```json
+{ "pairing_id": "q3V0…(22+ chars, 128-bit random)",
+  "code": "HXRT-2B99",
+  "expires_in_s": 900,
+  "poll_interval_s": 4,
+  "server_name": "NetRing Signage Manager",
+  "add_screen_hint": "Screens → Add Screen",
+  "protocol": { "min": 1, "max": 1 } }
+```
+
+- **Code format:** N letters from `ABCDEFGHJKMNPQRTUVWXYZ` (no I, L, O, S) + `-` + the last 4 hex
+  digits of the MAC, upper-case (without a MAC: the first 4 hex digits of the key fingerprint). **N = 4 on self-hosted servers, 6 on RingCast.io.** The letters
+  are unique among live pairings.
+- The server keeps at most one live pairing per key (a new request replaces the old one),
+  limits requests to 10 per minute per source address (IPv6 grouped by /56), caps live pairings
+  per source address (20) and overall (`503 busy`).
+- Clients clamp `poll_interval_s` to 3–30 and `expires_in_s` to 60–3600.
+
+### 3.2 `POST /api/device/v1/pair/status` (signed, §6, Key-Id = pairing_id)
+
+Body: `{"pairing_id": "…"}`.
+
+| Response | Meaning | Client action |
+|---|---|---|
+| `200 {"status":"waiting"}` | not claimed yet | poll again after `poll_interval_s` |
+| `200 {"status":"claimed","device_id":"…","device_token":"…","name":"Lobby Left","account_name":"Acme"}` | claimed | save token (§7), show "Claimed by Acme as Lobby Left" for 60 s, start player |
+| `410 pairing_expired` | expired or unknown | start again at §3.1 (new code) |
+| `401 bad_signature` / `bad_timestamp` | signature or clock problem | correct the clock from `server_time_ms` (if given) and retry; after 3 failures start again |
+| `429 rate_limited` | polled faster than every 3 s | wait `Retry-After` |
+
+The server **creates the device token at the first signed poll after the claim** and stores only
+its hash. If that response is lost, the next signed poll issues a fresh token (replacing the
+hash) until the device's first check-in. The code alone gives an attacker nothing: only the key
+that requested the pairing receives a token. Polls are at most every 3 s (the server allows
+0.5 s of jitter).
+
+### 3.3 Claim (admin side; server API)
+
+Two steps, so the admin sees which physical screen they are about to add:
+
+1. `POST /api/screens/claim/lookup {"code": "HXRT-2B99"}` → `{model, tier, platform, mac_address,
+   hostname, ip, requested_at}` of the waiting screen (`mac_address` empty when the screen sent none).
+2. `POST /api/screens/claim {"code": "HXRT-2B99", "name": "Lobby Left", "confirm": true}` →
+   the new device.
+
+Rules:
+
+- The full code **including the MAC suffix** is required.
+- Unknown, expired, already-claimed and suffix-mismatch codes all give `404 code_not_found`.
+- Wrong codes (lookup or claim) are limited to 10 per admin and 30 per account per 10 minutes.
+- Claiming extends the pairing's expiry by 10 minutes so the screen has time to collect its token.
+- The device belongs to the **claiming admin's account only**. A device previously registered with
+  the same key is retired (re-pairing replaces it).
+- After the claim the screen shows "Claimed by <account_name> as <name>" for 60 seconds and only
+  then saves its token. Unplugging the screen during that notice undoes a wrong claim: it comes
+  back unpaired with a new code, and the real claim retires the wrong device record.
+- On RingCast.io the lookup warns when the admin's public IP differs from the screen's.
+- Admin requests that change state are JSON (`Content-Type: application/json`), which blocks
+  cross-site form posts.
+
+## 4. Device token
+
+- Opaque, 256-bit random, base64url (43 characters, `^[A-Za-z0-9_-]{43}$`). The server stores
+  only `SHA-256(token)`.
+- Sent as `Authorization: Bearer <token>` on every request after pairing.
+- Revoked from the dashboard (Remove screen / Reset pairing) with immediate effect.
+- **Renewal and recovery** (one endpoint): `POST /api/device/v1/token/renew`, signed with the device
+  key (§6, Key-Id = device_id), no Bearer needed → `{"device_token": "…"}`. The token the device
+  last used successfully stays valid for 10 minutes, so a lost response is harmless: the device
+  simply renews again.
+- On `401 unauthorized` the device tries `token/renew` once. On `401 device_revoked` (from any
+  endpoint, including renew) it deletes its token and returns to pairing (§3). On 5xx or network
+  errors it keeps the token and backs off (5 s, doubling, to 5 min). A server fault must never
+  unpair a fleet.
+
+## 5. Running
+
+### 5.1 `POST /api/device/v1/checkin` (Bearer), every `checkin_interval_s` (default 30)
+
+Only these fields are accepted (others are ignored; wrong types give `400`):
+
+| Field | Type | Limit |
+|---|---|---|
+| `client_version` | string | 32 chars |
+| `uptime_s`, `disk_free_mb` | integer | ≥ 0 |
+| `temp_c` | number | |
+| `ip` | string | 64 chars |
+| `display` | object `{width, height, orientation}` | integers; orientation one of `landscape`, `portrait_cw`, `portrait_ccw` |
+| `manifest_version`, `current_item` | string | 64 chars |
+| `errors` | list of strings | 20 items × 300 chars |
+| `capabilities` | list of strings | as in §3.1; replaces the list sent at pairing (an app update can add commands) |
+
+`200`:
+```json
+{ "name": "Lobby Left", "server_time_ms": 1790000000000,
+  "manifest_version": "d4e5f6", "checkin_interval_s": 30,
+  "commands": [ { "id": "c_91…", "type": "reboot", "args": {} } ] }
+```
+
+Clients clamp `checkin_interval_s` to 10–600. The server marks a device offline after 3 missed
+intervals.
+
+### 5.2 Commands
+
+`reboot`, `restart_player`, `refresh`, `screenshot`, `update_client`, `set_orientation
+{orientation}`, `unpair`, `set_server {mode, hostname, tls, ca_sha256}`.
+
+The server queues only commands in the screen's `capabilities` (`409 not_supported` otherwise).
+LG apps are updated by the LG store or the display's SI Server (`/lg/`), never by `update_client`.
+
+- The device stores the ids of the last 50 commands it handled on disk and ignores repeats.
+- For `reboot`, `restart_player`, `unpair` and `set_server` the device **posts the result first,
+  then acts**.
+- Results: `POST /api/device/v1/commands/<id>/result` (Bearer) `{"ok": true, "message": ""}`.
+- The server delivers a command at most 3 times; without a result it is marked failed. Unfinished
+  commands expire after 24 hours. Command `args` are at most 4 KB.
+- `set_server` to a `private-ca` server must include `ca_sha256`, and a device refuses `set_server`
+  during its first 24 hours after pairing (so a wrong claim can't immediately move the screen to
+  another server). The device re-checks everything the setup checks (fingerprint, CA name
+  constraint) before switching.
+
+**`update_client {version, url, sha256, manifest, signature}`.** `manifest` is the text
+`ringcast-client-update\nversion=<x.y.z>\nsha256=<hex>\n`; `signature` is an OpenSSH signature
+(`ssh-keygen -Y sign`, armored `-----BEGIN SSH SIGNATURE-----` text) over exactly that manifest,
+namespace `ringcast-client-update`, by a **NetRing release key** listed in the client's built-in
+`/opt/ringcast/client/release-keys/allowed_signers` (principal `netring-release`). The device:
+
+1. verifies the signature with `ssh-keygen -Y verify`;
+2. takes `version` and `sha256` **from the signed manifest** (and requires the command's copies to match);
+3. refuses any version not newer than the newest it has installed (no downgrades);
+4. downloads `url` (https only) and checks its SHA-256 before installing.
+
+A compromised server therefore can't push code, or an older release, to screens. The publisher
+signs releases offline with `tools/Sign-RingCastRelease.ps1` (client repository).
+
+**Privileged actions.** The agent runs unprivileged and can't reboot, restart units, install
+updates or rewrite `/etc/ringcast`. These go through a small root helper with a fixed set of verbs
+(`reboot`, `restart-player`, `install-update <staged file>`, `set-server <args>`) that re-validates
+every input itself and treats files in `/var/lib/ringcast` as untrusted (no symlink following,
+fd-based access). To be specified with the player agent.
+
+### 5.3 Content
+
+- `GET /api/device/v1/manifest` (Bearer) → the playlist manifest (items, durations, transitions,
+  sync group, `version`). `304` when `If-None-Match` equals the current version.
+- The player is a web page shown full screen by the device's web engine (WPE WebKit via `cog`),
+  which runs as its own user (`ringcast-web`) with **no access** to the device key or token. The
+  agent starts a **player session**: `POST /api/device/v1/player-session` (Bearer) →
+  `{"url": "https://…/api/device/v1/play/start?s=<one-time>", "expires_in_s": 86400}`. Opening the
+  URL sets an `HttpOnly; Secure; SameSite=Strict` cookie scoped to `/api/device/v1/play/` and
+  redirects to the player page; its manifest polling and media requests use that cookie. The agent
+  renews the session before it expires.
+- **LG webOS** has a single web engine: the app (the agent) shows the player page in a full-screen
+  frame. The app's own page is not on the server's site, so for `lg-signage` and `lg-tv` screens
+  the player cookie is set with `SameSite=None; Secure` instead of `Strict` (still `HttpOnly` and
+  scoped to `/api/device/v1/play/`, whose endpoints only read). The app holds the key and token;
+  the framed player page can't read them (different origin). *To be confirmed on a real display
+  before release; the fallback is a session carried in the player URL path.*
+- Allowed content URL schemes: `https:`, plus `http:` for items an admin added explicitly.
+  Never `javascript:`, `data:`, `file:`.
+- `GET /api/device/v1/time` (no auth) → `{"t": <server ms>}` for synchronised playback.
+
+### 5.4 `PUT /api/device/v1/screenshot` (Bearer)
+
+`image/jpeg`, at most 2 MB, on the `screenshot` command (and every `screenshot_interval_s` when the
+check-in response includes it).
+
+## 6. Request signatures
+
+Used for `pair/request`, `pair/status` and `token/renew`. Headers:
+
+```
+X-RingCast-Key-Id: <key fingerprint | pairing_id | device_id>
+X-RingCast-Timestamp: <unix ms, exactly 13 digits>
+X-RingCast-Nonce: <16–64 chars of A–Z a–z 0–9 _ ->
+X-RingCast-Signature: <base64 Ed25519 signature>
+```
+
+Signed bytes (UTF-8, `\n` separated, no trailing newline):
+
+```
+RINGCAST-SIG-V1
+<HTTP method>
+<path, without query string>
+<Key-Id>
+<timestamp>
+<nonce>
+<hex SHA-256 of the exact request body>
+```
+
+The server rejects timestamps more than 5 minutes from its own clock (`401 bad_timestamp`, with
+`server_time_ms` so the device can correct) and nonces seen in the last 15 minutes. It checks
+cheap limits before verifying signatures and records the nonce only after a valid signature.
+
+Test vector (private key seed = 32 bytes `0x01`, method `POST`, path
+`/api/device/v1/pair/status`, Key-Id `abc`, timestamp `1790000000000`, nonce
+`AAAAAAAAAAAAAAAAAAAAAA`, body `{"pairing_id": "abc"}`): see
+`test_signature_vector` in `tests/test_pairing.py` of the server repository; the expected signature is
+`IE37jjegcrxHoAoErhB2aN9J+yTz9IX9M9AkjG7nNGWhtX77KVARHHky28m7Kny3FSPfAp8ia0EuYAisnGrUDg==`.
+
+## 7. Device users and files
+
+| User | Runs | Can read |
+|---|---|---|
+| root | pairing (`ringcast-client-pairing.service`), setup | everything |
+| `ringcast-client` | agent: check-in, commands, token renewal, player sessions | key, token |
+| `ringcast-web` | web engine (`cog`) showing the player page | neither |
+
+| Path | Owner / mode | Content |
+|---|---|---|
+| `/etc/ringcast/client.conf` | root 644 | §2 |
+| `/var/lib/ringcast/keys/device_ed25519` | ringcast-client 600 | private key (OpenSSH format) |
+| `/var/lib/ringcast/keys/device_ed25519.pub` | ringcast-client 644 | public key |
+| `/var/lib/ringcast/device.token` | ringcast-client 600 | token, one line |
+| `/var/lib/ringcast/device.json` | ringcast-client 644 | device_id, name, server |
+| `/var/lib/ringcast/commands.json` | ringcast-client 600 | ids of handled commands |
+| `/var/lib/ringcast/repair-requested` | ringcast-client | flag: the agent asks root to start pairing (a systemd `.path` unit) |
+
+All writes are atomic (temporary file, `fsync`, rename, `fsync` of the directory).
+
+LG webOS apps keep the key (as raw 32-byte seed, base64), token and server address in the app's
+own storage (`localStorage` of the app's origin), which only that app can read. There is no
+separate web-engine user, so the player page runs in a frame of another origin instead (§5.3).
+
+## 8. Decisions recorded
+
+1. **Token type:** opaque random token stored hashed, not a JWT: instantly revocable, nothing to
+   decode on the device, no signing key to manage on the server. The device key is the lasting
+   identity and can always get a new token unless the device was removed.
+2. **Pending pairings** are stored persistently with their expiry.
+3. **Multi-tenant:** the claim binds the device to the claiming admin's account. Tests prove an
+   admin in account A can't look up, claim, see or command a device in account B, and a missing
+   account on the server side fails closed.
+4. **Self-hosted TLS:** a name-constrained private CA rather than trusting a server certificate
+   directly.
+5. **Updates:** signed by a NetRing release key held offline by the publisher.
+6. **LG screens:** one app for LG webOS Signage displays and standard LG TVs, talking this same
+   protocol. Public certificates only. Standard TVs can't start an app at power-on themselves,
+   so the server keeps the app in front (§9).
+
+## 9. Standard LG TVs: control from the server (not part of the device contract)
+
+A standard LG TV boots to its last input and offers no way for an app to start itself. The server
+therefore uses the TV's local control service, the one phone remote apps use:
+
+- `wss://<tv-ip>:3001/` (the TV's own self-signed certificate; plain `ws://<tv-ip>:3000/` on
+  older firmware), SSAP messages (`register`, then `request` with `ssap://` URIs).
+- **Pairing:** an administrator clicks **Connect TV control** on the screen; the TV shows an
+  "allow" prompt once and returns a client key, which the server stores encrypted with its other
+  secrets. Removing the screen deletes the key.
+- **Keeping signage in front:** about every 10 seconds, when the TV reports power state `Active`
+  and the app in front (`com.webos.applicationManager/getForegroundAppInfo`) is not the RingCast
+  app, the server launches it (`system.launcher/launch`). Per screen: **Always** (default) or
+  **After power-on only** (someone may switch to TV until the next power-on).
+- **Power:** `system/turnOff`, and wake-on-LAN to the MAC address, which only reaches TVs in
+  the server's own network segment.
+- Needs: the TV's IP address (the address it reports at check-in), TCP 3001 from the server to
+  the TV, and on the TV **LG Connect Apps** / **TV On With Mobile** on, **Quick Start+** for wake.
+- This interface is not an official LG developer API: firmware updates may change it, and the
+  server reports failures on the screen instead of retrying endlessly.
