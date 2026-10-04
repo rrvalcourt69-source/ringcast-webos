@@ -1,0 +1,92 @@
+Security policy: RingCast for LG webOS
+======================================
+
+Reporting a problem
+-------------------
+Please report security problems privately, not in public issues.
+
+- Use GitHub's "Report a vulnerability" button on this repository (Security tab), or
+- Email NetRing Tech Services with the subject "Security: RingCast for LG webOS".
+
+Include the app version (shown at the bottom of the pairing screen), the display model and
+webOS version, what you found, and the steps to reproduce it. We aim to acknowledge reports
+within 3 business days and to ship a fix or a mitigation for confirmed issues as soon as
+practical.
+
+Supported versions: the latest release only, until 1.0 ships.
+
+
+What the app stores, and where
+------------------------------
+Everything is kept in the app's own localStorage on the display. webOS gives each app its own
+storage, which other apps and web pages can't read (docs/PROTOCOL.txt §7).
+
+  rc.seed         the device's Ed25519 private key (32-byte seed, base64). Created on first
+                  start; it never leaves the display and is never sent, logged or shown.
+  rc.token        the device token (PROTOCOL §4). Sent only to the configured server, in the
+                  Authorization header of device requests; never logged or shown.
+  rc.server       the server address (https://...).
+  rc.device_id    the screen's id on the server, and rc.device_name its name.
+  rc.commands     the ids of the last 50 commands handled (so a repeated command is ignored).
+  rc.orientation  the rotation set by the set_orientation command.
+
+localStorage is not encrypted. Someone who can run their own code on the display (for example
+with the TV in Developer Mode and the LG CLI) could read it. In that case remove the screen in
+the dashboard (Remove screen): the token stops working at once, and the key alone gives
+nothing; the server only accepts it again after an administrator claims the screen.
+
+Removing the screen in the dashboard, or the unpair command, makes the app forget its token and
+device id and show a new pairing code. The key stays, so the server recognises the same display
+when it is paired again (and retires its old record).
+
+
+Network
+-------
+- https:// only. The server must have a certificate from a public certificate authority:
+  LG displays can't add a private CA, and the app never switches certificate checking off.
+  An address that can't have a public certificate (an IP address, a .local or .lan name) is
+  refused with an explanation.
+- The app talks only to the server address entered on the display, under /api/device/v1/.
+  It sends no cookies of its own (fetch with credentials "omit"); the server answers device
+  requests with CORS for any origin and never allows credentials (PROTOCOL §1), which is safe
+  because device requests are authenticated with the token or a signature, never a cookie.
+- Pairing, pairing status and token renewal are signed with the device key (PROTOCOL §6), so
+  nobody can collect the token for a code shown on this display without its key.
+- The token is saved only after the 60-second "Claimed by <account> as <name>" notice. Turning
+  the display off during the notice undoes a wrong claim: it comes back with a new code.
+- Redirects are not followed for device requests.
+
+
+The player frame (PROTOCOL §5.3)
+--------------------------------
+LG webOS has a single web engine, so the app shows the server's player page in a full-screen
+frame:
+
+- The app opens only a player URL of its own server: https, the same host and port, path
+  /api/device/v1/play/start with a one-time code. Anything else is refused and the reason is
+  shown on screen.
+- The player page is on another origin (the server's), so it can't read the app's storage,
+  the key or the token. The frame is sandboxed without top-level navigation, so the page
+  can't navigate the app away.
+- Opening the one-time URL sets the player cookie (HttpOnly, Secure, scoped to
+  /api/device/v1/play/). Because the app's own page is not on the server's site, the server
+  sets it with SameSite=None for LG screens; the play/ endpoints only read.
+  This must be confirmed on each webOS version: if a display doesn't keep the cookie inside the
+  frame, the app shows "The player page didn't load" with the reason, and the PROTOCOL's
+  fallback (a session carried in the player URL) applies.
+- The app also accepts a small status message from the player page
+  ({type: "ringcast-player", state: "playing" | "error", error: "<code>"}), only from the frame
+  it opened and only from the server's origin; it is used to show the error on screen and
+  nothing else.
+
+
+Other rules
+-----------
+- Text from the server (screen name, account name, server name, error codes) is shown as plain
+  text, clipped, never as HTML and never executed.
+- Numbers from the server are clamped to the ranges in PROTOCOL.txt.
+- The app carries out only refresh, restart_player, set_orientation and unpair. It never
+  changes its server on a command (no set_server): the address can only be changed on the
+  display itself, with the remote, from the pairing screen.
+- Command results are posted before restart_player and unpair act; command ids are remembered
+  so a command runs at most once.
