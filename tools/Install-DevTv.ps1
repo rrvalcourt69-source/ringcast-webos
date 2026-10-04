@@ -148,7 +148,7 @@ if (-not (Test-Path (Join-Path $Bin "ares-install.cmd"))) {
 }
 $setup = Get-Cli "ares-setup-device"
 $novacom = Get-Cli "ares-novacom"
-$deviceInfo = Get-Cli "ares-device-info"
+$device = Get-Cli "ares-device"          # ares-device-info is retired in the current CLI
 $install = Get-Cli "ares-install"
 $launch = Get-Cli "ares-launch"
 Write-Ok "LG CLI in $CliDir"
@@ -194,7 +194,7 @@ if (-not $SkipKey) {
     Write-Ok "Key received"
 }
 
-$info = Get-NativeOutput $deviceInfo @("--device", $DeviceName)
+$info = Get-NativeOutput $device @("--device", $DeviceName, "--system-info")
 if ($script:LastCode -ne 0) {
     Write-Host $info
     Stop-WithError "The CLI can't log in to the TV. Run the script again without -SkipKey, and check the passphrase."
