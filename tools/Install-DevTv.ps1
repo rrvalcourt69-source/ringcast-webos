@@ -186,12 +186,18 @@ if (-not $SkipKey) {
     while ($pass -notmatch '^[A-Za-z0-9]{6,}$') {
         $pass = "$(Read-Host "   Passphrase shown in the Developer Mode app (case-sensitive)")".Trim()
     }
-    # The passphrase goes in on standard input, not on the command line.
-    $code = Invoke-Native $novacom @("--device", $DeviceName, "--getkey") $pass
+    # Passed with --passphrase: when it is piped in, the CLI can exit before reading it and then
+    # never saves the key and passphrase (exit code 0 all the same).
+    $code = Invoke-Native $novacom @("--device", $DeviceName, "--getkey", "--passphrase", $pass)
     if ($code -ne 0) {
         Stop-WithError "Couldn't get the key from the TV (exit $code). Turn Key Server ON in the Developer Mode app and check the passphrase."
     }
-    Write-Ok "Key received"
+    $list = Get-NativeOutput $setup @("--list")
+    if ($list -notmatch "(?m)^\s*$escapedName\s.*\s$([regex]::Escape($pass))\s*$") {
+        Write-Host $list
+        Stop-WithError "The LG CLI didn't save the key for '$DeviceName'. Run the script again (Key Server ON)."
+    }
+    Write-Ok "Key received and saved"
 }
 
 $info = Get-NativeOutput $device @("--device", $DeviceName, "--system-info")
