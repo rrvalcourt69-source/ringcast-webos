@@ -10,6 +10,8 @@ one-time session URL and cookie of §5.3. Drives the screens with remote-control
 saves 1920x1080 screenshots:
 
     python3 tests/e2e_screens.py [output-dir]
+    RINGCAST_APP_DIR=build/lg-tv/check/usr/palm/applications/com.netringtech.ringcast \
+        python3 tests/e2e_screens.py           (the packaged files)
 
 Needs: Playwright for Python with Chromium, cryptography, openssl.
 """
@@ -32,6 +34,8 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parent.parent
+# RINGCAST_APP_DIR: test an unpacked package instead of the source tree (tools/build.sh output)
+APP_DIR = Path(os.environ.get("RINGCAST_APP_DIR") or ROOT / "app")
 PORT = 8443
 HOST = "signage.example.com"
 ORIGIN = f"https://{HOST}:{PORT}"
@@ -260,7 +264,7 @@ def main(out):
                 console = []
                 page.on("console", lambda m: console.append(m.type + ": " + m.text))
                 page.on("pageerror", lambda e: console.append("pageerror: " + str(e)))
-                page.goto((ROOT / "app" / "index.html").as_uri())
+                page.goto((APP_DIR / "index.html").as_uri())
                 page.wait_for_selector("#s-address:not([hidden])")
                 sfx = "" if lang == "en-US" else "-es"
                 if lang == "es-ES":

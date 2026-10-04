@@ -9,3 +9,4 @@ secrets/
 .claude/
 test-output/
 __pycache__/
+build/
