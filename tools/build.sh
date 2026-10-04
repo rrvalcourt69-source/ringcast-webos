@@ -54,8 +54,10 @@ for PLATFORM in lg-tv lg-signage; do
          -e "s/^    version: \"[^\"]*\"\$/    version: \"$VERSION\"/" "$STAGE/js/config.js"
   grep -q "^    platform: \"$PLATFORM\",\$" "$STAGE/js/config.js" || die "couldn't set the platform in config.js"
   grep -q "^    version: \"$VERSION\"\$" "$STAGE/js/config.js" || die "couldn't set the version in config.js"
-  # nothing but app files: no markdown, no development notes
-  if find "$STAGE" -name '*.md' -o -name 'CLAUDE*' | grep -q .; then die "unexpected files in the app folder"; fi
+  # nothing but app files (no markdown, notes or stray files): an allow-list of file types
+  STRAY="$(find "$STAGE" -type f ! \( -name '*.html' -o -name '*.css' -o -name '*.js' -o -name '*.json' \
+    -o -name '*.png' -o -name '*.txt' \) -print)"
+  [[ -z "$STRAY" ]] || die "unexpected files in the app folder: $STRAY"
 
   # --no-minify: ship the readable source with its licence headers (AGPL; debugging on the TV)
   "$ARES_PACKAGE" --no-minify -o "$OUT" "$STAGE" >"$BUILD/$PLATFORM/ares-package.log" 2>&1 \
