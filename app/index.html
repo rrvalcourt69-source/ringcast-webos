@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<!--
+  SPDX-License-Identifier: AGPL-3.0-only
+  Copyright (C) 2026 NetRing Tech Services, LLC
+  RingCast for LG webOS displays. Source: https://github.com/rrvalcourt69-source/netring-signage-releases
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, height=1080, initial-scale=1">
+  <title>RingCast</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div id="stage">
+    <!-- 1. server address -->
+    <section id="s-address" class="screen" hidden>
+      <div class="brand">RingCast</div>
+      <h1 data-t="addr_title"></h1>
+      <p class="lead" data-t="addr_intro"></p>
+      <p class="note" data-t="addr_cert"></p>
+      <label class="field-label" for="addr" data-t="addr_label"></label>
+      <div class="field-row">
+        <input id="addr" class="focusable" type="url" inputmode="url" autocomplete="off" autocapitalize="off"
+               autocorrect="off" spellcheck="false" maxlength="200" value="https://">
+        <button id="addr-go" class="focusable" type="button" data-t="addr_connect"></button>
+      </div>
+      <p id="addr-status" class="status" aria-live="polite"></p>
+      <p class="note" data-t="addr_example"></p>
+      <p id="addr-keys" class="keys"></p>
+    </section>
+
+    <!-- connecting -->
+    <section id="s-connecting" class="screen" hidden>
+      <div class="brand">RingCast</div>
+      <p id="connecting-text" class="lead"></p>
+    </section>
+
+    <!-- 2. pairing code -->
+    <section id="s-code" class="screen" hidden>
+      <h1 class="pair-title" data-t="pair_title"></h1>
+      <div id="code" class="code"></div>
+      <p id="code-enter" class="lead"></p>
+      <p id="code-hint" class="hint"></p>
+      <p id="code-server" class="dim"></p>
+      <p id="code-problem" class="warn" data-t="pair_poll_problem" hidden></p>
+      <p class="dim small" data-t="pair_expires"></p>
+    </section>
+
+    <!-- claimed notice -->
+    <section id="s-claimed" class="screen" hidden>
+      <h1 class="ok" data-t="claimed_title"></h1>
+      <div id="claimed-name" class="name"></div>
+      <p id="claimed-by" class="lead"></p>
+      <p id="claimed-server" class="dim"></p>
+      <p class="warn small" data-t="claimed_undo"></p>
+      <p id="claimed-wait" class="dim"></p>
+    </section>
+
+    <!-- messages (network, server problems) -->
+    <section id="s-message" class="screen" hidden>
+      <h1 id="msg-title" class="warn"></h1>
+      <p id="msg-detail" class="lead"></p>
+      <p id="msg-server" class="dim"></p>
+      <p id="msg-retry" class="dim"></p>
+    </section>
+
+    <!-- 3. playing -->
+    <section id="s-player" hidden>
+      <div id="frame-box"></div>
+      <div id="player-wait" class="player-wait" data-t="player_starting"></div>
+      <div id="frame-error" class="frame-error" hidden>
+        <h1 class="warn" data-t="frame_title"></h1>
+        <p id="frame-reason" class="lead"></p>
+        <p id="frame-hint" class="note" data-t="frame_cookie_hint" hidden></p>
+        <p id="frame-retry" class="dim"></p>
+        <p id="frame-footer" class="dim small"></p>
+      </div>
+      <div id="marker" class="marker" hidden></div>
+    </section>
+
+    <footer id="footer" hidden>
+      <span id="footer-key" class="key-hint"><span class="blue-dot"></span><span data-t="key_blue"></span></span>
+      <span id="diag" class="diag"></span>
+    </footer>
+  </div>
+
+  <script src="js/vendor/nacl-fast.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/strings.js"></script>
+  <script src="js/sha256.js"></script>
+  <script src="js/core.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/platform.js"></script>
+  <script src="js/http.js"></script>
+  <script src="js/agent.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
