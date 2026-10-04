@@ -11,7 +11,7 @@ same version.
 | Draft | Date | Change |
 |---|---|---|
 | 1 | 2026-10-02 | First version (replaces `PAIRING_FLOW.txt`) |
-| 3 | 2026-10-04 | LG webOS screens: `platform` and `capabilities`, pairing without a MAC address, CORS for app-based clients, the player in an app frame (§5.3), server-side control of standard LG TVs (§9). Pis and older servers are unaffected. |
+| 3 | 2026-10-04 | LG webOS screens: `platform` and `capabilities`, pairing without a MAC address, CORS for app-based clients, the player in an app frame and its start status message to the app (§5.3), server-side control of standard LG TVs (§9). Pis and older servers are unaffected. |
 | 2 | 2026-10-02 | Security review fixes (two review rounds): signed pairing request, token issued at first signed poll and stored only as a hash, key-signed token renewal/recovery, two-step claim with mandatory MAC suffix and longer cloud codes, name-constrained private CA for self-hosted servers, signed client updates, command delivery rules, token and key moved to `/var/lib/ringcast`, separate web-engine user |
 
 ---
@@ -277,6 +277,16 @@ fd-based access). To be specified with the player agent.
   scoped to `/api/device/v1/play/`, whose endpoints only read). The app holds the key and token;
   the framed player page can't read them (different origin). *To be confirmed on a real display
   before release; the fallback is a session carried in the player URL path.*
+- **Player status to the frame.** When the player page runs in a frame (`window.parent !== window`)
+  it posts `{"type": "ringcast-player", "state": "playing"}` to the parent once it has loaded the
+  manifest and started, and `{"type": "ringcast-player", "state": "error", "error": "<code>"}` when
+  it can't: `no_session` (no valid player cookie, for example refused inside the frame, or the
+  manifest answered 401/403), `start_expired` (the one-time `play/start` link was used or
+  expired), `manifest_http_<status>` or `manifest_unreachable` (no manifest yet). After an error it
+  posts `playing` again once it recovers. Without a valid session, `play/` and `play/start` answer
+  `403` with a small HTML page that shows a message and posts the error. targetOrigin is `*`: the
+  messages carry no secrets. The app should accept them only from its player frame (`event.source`) and
+  start a new player session on `error`. At top level (Raspberry Pi) nothing is posted.
 - Allowed content URL schemes: `https:`, plus `http:` for items an admin added explicitly.
   Never `javascript:`, `data:`, `file:`.
 - `GET /api/device/v1/time` (no auth) → `{"t": <server ms>}` for synchronised playback.
