@@ -46,6 +46,12 @@ to copy and paste, in order: PowerShell on his PC, then bash on the server (PuTT
 paths and file names, each followed by a command that verifies it worked. Never just name a
 script or point at a README.
 
+**Updates go through GitHub only (decided 2026-10-04):** Rick does not install builds by
+uploading files. Every build, test builds included, is a full release that Rick publishes with
+`Publish-NetRingRelease.ps1`, and servers update from Settings > Updates. Only fall back to a
+manual `.run` upload to recover from a failed update. The routines (dev server, certificate
+renewal, LG testing) are in the claude.ai project doc `claude/netring-signage-runbook.md`.
+
 ## Releasing
 
 The LG app ships inside the NetRing Signage Manager release (the server publishes it at `/lg/`).
