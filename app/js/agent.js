@@ -148,7 +148,6 @@
   Agent.prototype.start = function () {
     this.key = this.store.key();
     this.setServer(this.store.server());
-    this.ui.setOrientation(this.store.orientation());
     this.ui.setDiag(this.diag());
     if (!this.origin) return this.enterAddress(false);
     if (this.store.token() && this.store.deviceId()) return this.run();
@@ -358,7 +357,7 @@
     this.sessionRetryAt = 0;
     this.sessionBackoff = new RC.core.Backoff(10, 300);
     this.frameErrorShown = false;
-    this.ui.showPlayer(this.store.orientation());
+    this.ui.showPlayer();
     return this.runLoop(gen).catch(function (e) {
       if (e instanceof Revoked) {
         self.log("returning to pairing: " + e.why);
@@ -456,13 +455,15 @@
       capabilities: RC.core.CAPABILITIES.slice()
     };
     if (this.info.ip) d.ip = this.info.ip.slice(0, 64);
+    // The screen as it really is: the server's player page does any rotation itself (§5.3).
     var size = this.ui.displaySize();
-    var disp = { orientation: this.store.orientation() };
     if (size && size.width > 0 && size.width <= 16384 && size.height > 0 && size.height <= 16384) {
-      disp.width = Math.round(size.width);
-      disp.height = Math.round(size.height);
+      d.display = {
+        width: Math.round(size.width),
+        height: Math.round(size.height),
+        orientation: size.width >= size.height ? "landscape" : "portrait_cw"
+      };
     }
-    d.display = disp;
     if (this.errors.length) d.errors = this.errors.slice(0, 20);
     return d;
   };
@@ -574,13 +575,14 @@
         this.gen++;                                   // stop everything before the reload
         this.reloadApp();
       } else if (type === "set_orientation") {
-        var o = args.orientation;
-        if (RC.core.ORIENTATIONS.indexOf(o) < 0) {
+        // As on the Pi: the server's player page rotates the content from the screen's
+        // orientation setting, so the app doesn't turn anything itself. It acknowledges and
+        // reloads the player so the page picks up the new setting.
+        if (RC.core.ORIENTATIONS.indexOf(args.orientation) < 0) {
           await this.postResult(cid, false, "invalid orientation");
         } else {
-          this.store.setOrientation(o);
-          this.ui.setOrientation(o);
-          await this.postResult(cid, true, "");
+          await this.postResult(cid, true, "reloading the player");
+          await this.newSession("set_orientation", gen);
         }
       } else if (type === "unpair") {
         await this.postResult(cid, true, "unpairing");
@@ -602,8 +604,10 @@
     this.sessionDue = this.sessionRetryAt;
     var playing = this.sessionStarted !== null && this.ui.frameState().state === "loaded";
     if (playing && reasonKey !== "frame_player_error") return;
-    this.ui.showFrameError({ reasonKey: reasonKey, vars: vars || {}, host: this.host, retryS: wait,
-      cookieHint: reasonKey === "frame_timeout" || reasonKey === "frame_player_error" });
+    var hint = "";
+    if (reasonKey === "frame_timeout") hint = "frame_cookie_hint";
+    else if (reasonKey === "frame_player_error" && vars && vars.error === "no_session") hint = "frame_no_session_hint";
+    this.ui.showFrameError({ reasonKey: reasonKey, vars: vars || {}, host: this.host, retryS: wait, hintKey: hint });
     this.frameErrorShown = true;
   };
 

@@ -221,9 +221,8 @@
   };
 
   // ── 3. playing ────────────────────────────────────────────────────────
-  UI.prototype.showPlayer = function (orientation) {
+  UI.prototype.showPlayer = function () {
     this.show("s-player");
-    this.setOrientation(orientation);
     this.$("player-wait").hidden = false;
     this.$("frame-error").hidden = true;
     this.renderMarker();
@@ -270,8 +269,9 @@
     return this.frameInfo;
   };
 
-  // Optional status from the player page: {type: "ringcast-player", state: "playing" | "error",
-  // error: "<code>"}. Accepted only from the frame we opened, on our server's origin.
+  // Player status (PROTOCOL §5.3): the player page posts {type: "ringcast-player", state:
+  // "playing"} or {type: "ringcast-player", state: "error", error: "<code>"} to its parent.
+  // Accepted only when it comes from the frame we opened (event.source), on our server's origin.
   UI.prototype.onFrameMessage = function (e) {
     if (!this.frame || e.source !== this.frame.contentWindow || !this.agent || e.origin !== this.agent.origin) return;
     var d = e.data;
@@ -286,7 +286,8 @@
 
   UI.prototype.showFrameError = function (o) {
     this.setText("frame-reason", RC.t(o.reasonKey, o.vars));
-    this.$("frame-hint").hidden = !o.cookieHint;
+    this.setText("frame-hint", o.hintKey ? RC.t(o.hintKey) : "");
+    this.$("frame-hint").hidden = !o.hintKey;
     var diag = this.diagText();
     this.setText("frame-footer", RC.t("frame_footer", { host: o.host, diag: diag }));
     this.$("frame-error").hidden = false;
@@ -314,10 +315,6 @@
     if (this.markers.old) m.textContent = RC.t("server_old_marker");
     else if (this.markers.offline) m.textContent = RC.t("offline");
     m.hidden = !(this.markers.old || this.markers.offline);
-  };
-
-  UI.prototype.setOrientation = function (o) {
-    this.$("frame-box").className = o === "portrait_cw" || o === "portrait_ccw" ? o : "";
   };
 
   // ── remote keys ───────────────────────────────────────────────────────

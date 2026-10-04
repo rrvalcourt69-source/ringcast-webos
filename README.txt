@@ -48,8 +48,9 @@ remove the screen in the dashboard (or send it the unpair command), then press O
 pairing screen.
 
 Commands the app carries out (PROTOCOL §5.2): refresh (new player session), restart_player
-(reloads the app), set_orientation (the content is turned in the app, for portrait-mounted
-displays) and unpair. The app reports the TV's LAN address at each check-in; the server uses it to keep the
+(reloads the app), set_orientation (acknowledged, then the player is reloaded: the server's
+player page turns the content according to the screen's orientation setting; the app itself
+never rotates anything) and unpair. The app reports the TV's LAN address at each check-in; the server uses it to keep the
 app in front on standard TVs.
 
 The bottom line of the pairing screen shows the app version, the platform (lg-tv or
@@ -91,9 +92,10 @@ Debugging on the TV: from the folder with the LG CLI,
 opens the web inspector for the running app (the console shows "[ringcast]" lines; the key and
 the token are never logged).
 
-If the display shows "The player page didn't load", the panel says why (the server refused a
-player session, the page didn't load in time, or the player page reported an error such as a
-missing player cookie). Please report the message together with the bottom line (version,
+If the display shows "The player page didn't load", the panel says why: the server refused a
+player session, the page didn't load in time, or the player page reported an error code. The
+code no_session means the display refused the player's sign-in cookie inside the app
+(PROTOCOL §5.3). Please report the message together with the bottom line (version,
 platform, model).
 
 

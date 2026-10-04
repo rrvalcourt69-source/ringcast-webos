@@ -10,7 +10,6 @@
 //   rc.device_id    device id from the claim
 //   rc.device_name  the name the server gave this screen
 //   rc.commands     ids of the last 50 commands handled (JSON list)
-//   rc.orientation  landscape | portrait_cw | portrait_ccw
 (function (root) {
   "use strict";
   var RC = root.RC = root.RC || {};
@@ -99,15 +98,6 @@
     this.set("rc.token", null);
     this.set("rc.device_id", null);
     this.set("rc.device_name", null);
-  };
-
-  Store.prototype.orientation = function () {
-    var v = this.get("rc.orientation");
-    return RC.core.ORIENTATIONS.indexOf(v) >= 0 ? v : "landscape";
-  };
-
-  Store.prototype.setOrientation = function (o) {
-    return this.set("rc.orientation", o);
   };
 
   Store.prototype.commandLog = function () {

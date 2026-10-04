@@ -28,7 +28,6 @@ storage, which other apps and web pages can't read (docs/PROTOCOL.txt §7).
   rc.server       the server address (https://...).
   rc.device_id    the screen's id on the server, and rc.device_name its name.
   rc.commands     the ids of the last 50 commands handled (so a repeated command is ignored).
-  rc.orientation  the rotation set by the set_orientation command.
 
 localStorage is not encrypted. Someone who can run their own code on the display (for example
 with the TV in Developer Mode and the LG CLI) could read it. In that case remove the screen in
@@ -74,10 +73,12 @@ frame:
   This must be confirmed on each webOS version: if a display doesn't keep the cookie inside the
   frame, the app shows "The player page didn't load" with the reason, and the PROTOCOL's
   fallback (a session carried in the player URL) applies.
-- The app also accepts a small status message from the player page
-  ({type: "ringcast-player", state: "playing" | "error", error: "<code>"}), only from the frame
-  it opened and only from the server's origin; it is used to show the error on screen and
-  nothing else.
+- The player page reports its status to the app (PROTOCOL §5.3): {type: "ringcast-player",
+  state: "playing"} or {type: "ringcast-player", state: "error", error: "<code>"}. The app
+  accepts it only when event.source is the player frame it opened and the message comes from
+  the server's origin; anything else is ignored. The error code is shown as text on the error
+  panel (no_session: the display refused the player's sign-in cookie) and is used for nothing
+  else.
 
 
 Other rules

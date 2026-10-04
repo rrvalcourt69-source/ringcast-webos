@@ -168,11 +168,6 @@ test("store: key created once, token and server validated, unpair keeps the key"
   const seed = mem["rc.seed"];
   s.forgetDevice();
   assert.ok(!("rc.token" in mem) && !("rc.device_id" in mem) && mem["rc.seed"] === seed);
-  assert.strictEqual(s.orientation(), "landscape");
-  s.setOrientation("portrait_cw");
-  assert.strictEqual(s.orientation(), "portrait_cw");
-  mem["rc.orientation"] = "upside_down";
-  assert.strictEqual(s.orientation(), "landscape");
 });
 
 test("strings: English and Spanish have the same keys and placeholders", () => {

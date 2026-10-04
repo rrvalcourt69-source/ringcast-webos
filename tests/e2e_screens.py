@@ -58,7 +58,7 @@ p{position:absolute;left:120px;top:590px;margin:0;font-size:56px;color:#d8e4f2;w
 <div class="clock" id="c"></div><script>
 function t(){var d=new Date();document.getElementById("c").textContent=("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);}
 t();setInterval(t,1000);
-try{parent.postMessage({type:"ringcast-player",state:"playing"},"*");}catch(e){}
+try{parent.postMessage(STATUS,"*");}catch(e){}
 </script></body></html>"""
 
 
@@ -76,6 +76,7 @@ class State:
         self.nonces = set()
         self.claim_next = None        # (name, account)
         self.session_error = None     # (status, code) to refuse player sessions
+        self.player_error = None      # error code the player page reports to the app (§5.3)
         self.pages_served = 0
         self.pages_refused = 0
 
@@ -172,7 +173,10 @@ class Handler(BaseHTTPRequestHandler):
                 S.pages_refused += 1
                 return self.err(403, "forbidden")
             S.pages_served += 1
-            return self.send(200, PLAYER_HTML.encode(), ctype="text/html; charset=utf-8")
+            status = ({"type": "ringcast-player", "state": "error", "error": S.player_error} if S.player_error
+                      else {"type": "ringcast-player", "state": "playing"})
+            return self.send(200, PLAYER_HTML.replace("STATUS", json.dumps(status)).encode(),
+                             ctype="text/html; charset=utf-8")
         return self.err(404, "not_found")
 
     def do_POST(self):
@@ -340,12 +344,25 @@ def main(out):
                 ck = S.checkins[-1]
                 check(ck.get("display", {}).get("width") == 1920 and ck.get("capabilities"), "check-in reports display")
                 # commands
+                # set_orientation: acknowledged, the player reloads; the app itself turns nothing
+                n = S.pages_served
                 S.queue.append({"id": "c_rot", "type": "set_orientation", "args": {"orientation": "portrait_cw"}})
-                page.wait_for_function("document.getElementById('frame-box').className === 'portrait_cw'", timeout=30000)
-                time.sleep(1)
-                page.screenshot(path=str(out / "4b-playing-portrait.png"))
+                deadline = time.time() + 30
+                while S.pages_served <= n and time.time() < deadline:
+                    time.sleep(0.5)
+                check(S.pages_served > n, "set_orientation reloads the player")
+                rot = page.evaluate("""(() => { var b = document.getElementById('frame-box');
+                    return [b.className, getComputedStyle(b).transform, b.offsetWidth, b.offsetHeight]; })()""")
+                check(rot == ["", "none", 1920, 1080], f"the app doesn't rotate the frame {rot}")
+                check(S.checkins[-1]["display"]["orientation"] == "landscape", "check-in reports the real orientation")
                 S.queue.append({"id": "c_rot2", "type": "set_orientation", "args": {"orientation": "landscape"}})
-                page.wait_for_function("document.getElementById('frame-box').className === ''", timeout=30000)
+                deadline = time.time() + 30
+                while len(S.results) < 2 and time.time() < deadline:
+                    time.sleep(0.5)
+                # a status message that doesn't come from the player frame is ignored
+                page.evaluate("window.postMessage({type: 'ringcast-player', state: 'error', error: 'forged'}, '*')")
+                time.sleep(3)
+                check(page.is_hidden("#frame-error"), "status message from outside the frame ignored")
                 n = S.pages_served
                 S.queue.append({"id": "c_ref", "type": "refresh", "args": {}})
                 deadline = time.time() + 30
@@ -369,9 +386,21 @@ def main(out):
                 page.wait_for_selector("#frame-error", state="hidden", timeout=40000)
                 page.wait_for_function("document.getElementById('player-wait').hidden", timeout=40000)
                 check(True, "player recovers after the refusal")
+                # the player page reports no_session (cookie refused in the frame)
+                S.player_error = "no_session"
+                S.queue.append({"id": "c_ref3", "type": "refresh", "args": {}})
+                page.wait_for_selector("#frame-error:not([hidden])", timeout=40000)
+                reason, hint = page.inner_text("#frame-reason"), page.inner_text("#frame-hint")
+                check("no_session" in reason and "cookie" in hint and page.is_visible("#frame-hint"),
+                      f"no_session shown with its explanation ({reason} / {hint})")
+                time.sleep(1)
+                page.screenshot(path=str(out / "5b-player-no-session.png"))
+                S.player_error = None
+                page.wait_for_selector("#frame-error", state="hidden", timeout=40000)
+                check(True, "player recovers once the page reports playing")
                 ids = [r["id"] for r in S.results]
-                check(ids == ["c_rot", "c_rot2", "c_ref", "c_ref2", "c_rs"], f"results posted once each {ids}")
-                check([r["ok"] for r in S.results] == [True, True, True, False, True], "results report success/failure")
+                check(ids == ["c_rot", "c_rot2", "c_ref", "c_ref2", "c_rs", "c_ref3"], f"results posted once each {ids}")
+                check([r["ok"] for r in S.results] == [True, True, True, False, True, True], "results report success/failure")
                 # unpair → pairing screen again
                 S.claim_next = None
                 S.queue.append({"id": "c_up", "type": "unpair", "args": {}})

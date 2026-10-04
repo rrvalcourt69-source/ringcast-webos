@@ -35,7 +35,6 @@ function makeEnv(opts) {
     autoLoad: opts.autoLoad !== false,
     frame: { state: "none", since: 0, error: "" },
     setDiag() {},
-    setOrientation(o) { this.orientation = o; rec("orientation", o); },
     showAddress(o) { rec("address", o); },
     showConnecting() { rec("connecting"); },
     showCode(o) { rec("code", o); },
@@ -50,7 +49,8 @@ function makeEnv(opts) {
     hideFrameError() { rec("frame_ok"); },
     setOffline(on) { this.offline = on; rec("offline", on); },
     setServerOld(on) { this.old = on; },
-    displaySize() { return { width: 1920, height: 1080 }; },
+    size: { width: 1920, height: 1080 },
+    displaySize() { return this.size; },
   };
   const logs = [];
   const info = Object.assign({ mac: "", ip: "192.0.2.10", model: "LG 43UN7000PUB", tier: "webos5" }, opts.info || {});
@@ -338,16 +338,20 @@ async function command(e, c) {
   await e.until(() => e.server.count("checkin") > before + 1, "command handled");
 }
 
-test("commands: set_orientation rotates and persists; repeats and invalid ones", async () => {
+test("commands: set_orientation is acknowledged and reloads the player; repeats and invalid ones", async () => {
   const e = makeEnv({ claimedSeconds: 1 });
   await e.pairAndRun();
+  const sessions = e.server.sessions, plays = e.uiCalls("play").length;
   await command(e, { id: "c_1", type: "set_orientation", args: { orientation: "portrait_cw" } });
   await command(e, { id: "c_1", type: "set_orientation", args: { orientation: "portrait_cw" } });
-  assert.deepStrictEqual(plain(e.server.results), [{ id: "c_1", ok: true, message: "" }]);
-  assert.strictEqual(e.mem["rc.orientation"], "portrait_cw");
-  assert.strictEqual(e.ui.orientation, "portrait_cw");
+  assert.deepStrictEqual(plain(e.server.results), [{ id: "c_1", ok: true, message: "reloading the player" }]);
+  assert.strictEqual(e.server.sessions, sessions + 1, "one new player session");
+  assert.strictEqual(e.uiCalls("play").length, plays + 1, "frame reloaded once");
+  const ev = e.server.events.map((x) => x.what);
+  assert.ok(ev.lastIndexOf("result") < ev.lastIndexOf("session"), "result first, then the reload");
+  assert.strictEqual(e.mem["rc.orientation"], undefined, "nothing stored");
   const b = e.server.events.filter((x) => x.what === "checkin").pop().body;
-  assert.strictEqual(b.display.orientation, "portrait_cw");
+  assert.deepStrictEqual(b.display, { width: 1920, height: 1080, orientation: "landscape" }, "the real screen");
   await command(e, { id: "c_2", type: "set_orientation", args: { orientation: "sideways" } });
   await command(e, { id: "c_3", type: "reboot", args: {} });
   await command(e, { id: "c_4", type: "dance" });
@@ -361,15 +365,26 @@ test("commands: set_orientation rotates and persists; repeats and invalid ones",
   assert.strictEqual(r[1].message, "reboot is not supported on this screen");
   assert.strictEqual(r[2].message, "unknown command 'dance'");
   assert.strictEqual(r[3].message, "invalid command arguments");
+  assert.strictEqual(e.server.sessions, sessions + 1, "invalid set_orientation doesn't reload");
   // handled ids survive an app restart
   e.stop();
   e.agent = e.newAgent();
   e.agent.start();
-  await e.until(() => e.server.count("checkin") > 0 && e.uiCalls("play").length > 1, "restarted");
+  await e.until(() => e.server.count("checkin") > 0 && e.uiCalls("play").length > plays + 1, "restarted");
+  const s2 = e.server.sessions;
   await command(e, { id: "c_1", type: "set_orientation", args: { orientation: "landscape" } });
-  assert.strictEqual(e.mem["rc.orientation"], "portrait_cw", "repeat after restart ignored");
-  assert.strictEqual(e.server.results.length, 6);
+  assert.strictEqual(e.server.results.length, 6, "repeat after restart ignored");
+  assert.strictEqual(e.server.sessions, s2);
   assert.ok(JSON.parse(e.mem["rc.commands"]).length <= 50);
+  e.stop();
+});
+
+test("check-in: display orientation follows the real screen size", async () => {
+  const e = makeEnv({ claimedSeconds: 1 });
+  e.ui.size = { width: 1080, height: 1920 };
+  await e.pairAndRun();
+  const b = e.server.events.find((x) => x.what === "checkin").body;
+  assert.deepStrictEqual(b.display, { width: 1080, height: 1920, orientation: "portrait_cw" });
   e.stop();
 });
 
@@ -437,12 +452,12 @@ test("player: a URL off our server or not https is refused with a reason on scre
   e.stop();
 });
 
-test("player: a page that never loads is reported and retried with a new session", async () => {
+test("player: a page that never loads, or reports an error, is shown and retried with a new session", async () => {
   const e = makeEnv({ claimedSeconds: 1, autoLoad: false });
   await e.pairAndRun();
   await e.until(() => e.uiCalls("frame_error").length > 0, "frame timeout");
   assert.strictEqual(e.uiCalls("frame_error")[0].v.reasonKey, "frame_timeout");
-  assert.strictEqual(e.uiCalls("frame_error")[0].v.cookieHint, true);
+  assert.strictEqual(e.uiCalls("frame_error")[0].v.hintKey, "frame_cookie_hint");
   await e.until(() => e.uiCalls("play").length >= 2, "new session in the frame");
   const fe = e.uiCalls("frame_error")[0].t, p2 = e.uiCalls("play")[1].t;
   assert.ok(p2 - fe >= 10000 && p2 - fe < 12000, "new session 10 s after the error, not " + (p2 - fe));
@@ -451,7 +466,15 @@ test("player: a page that never loads is reported and retried with a new session
   const v = e.uiCalls("frame_error")[1].v;
   assert.strictEqual(v.reasonKey, "frame_player_error");
   assert.strictEqual(v.vars.error, "no_session");
-  assert.strictEqual(v.cookieHint, true);
+  assert.strictEqual(v.hintKey, "frame_no_session_hint");
+  // another error code: shown with its code, without the cookie explanation
+  await e.until(() => e.uiCalls("play").length >= 3, "next session");
+  e.ui.frame = { state: "error", since: e.clock.t, error: "manifest_failed" };
+  await e.until(() => e.uiCalls("frame_error").length >= 3, "second player error");
+  const w = e.uiCalls("frame_error")[2].v;
+  assert.strictEqual(w.reasonKey, "frame_player_error");
+  assert.strictEqual(w.vars.error, "manifest_failed");
+  assert.strictEqual(w.hintKey, "");
   e.stop();
 });
 

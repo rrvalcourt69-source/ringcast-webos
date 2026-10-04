@@ -285,23 +285,6 @@ h1 {
   background: #000;
 }
 
-/* Rotation for portrait-mounted displays (set_orientation): the frame is laid out at
-   1080x1920 and turned to fill the 1920x1080 panel. */
-#frame-box.portrait_cw,
-#frame-box.portrait_ccw {
-  width: 1080px;
-  height: 1920px;
-  transform-origin: 0 0;
-}
-
-#frame-box.portrait_cw {
-  transform: rotate(90deg) translateY(-100%);
-}
-
-#frame-box.portrait_ccw {
-  transform: rotate(-90deg) translateX(-100%);
-}
-
 .player-wait {
   position: absolute;
   left: 0;

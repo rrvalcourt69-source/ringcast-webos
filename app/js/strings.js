@@ -67,6 +67,7 @@
       frame_session_net: "Can't reach the server to start the player.",
       frame_player_error: "The player page reported: {error}.",
       frame_cookie_hint: "The display may not keep the player's cookie inside the app (see PROTOCOL §5.3). Please report this message.",
+      frame_no_session_hint: "The display refused the player's sign-in cookie inside the app, so the player can't show content. Please report this message with the line below.",
       frame_footer: "Server: {host} · {diag}",
       // diagnostics
       diag: "RingCast {version} · {platform} · {model}",
@@ -126,6 +127,7 @@
       frame_session_net: "No se puede conectar con el servidor para iniciar el reproductor.",
       frame_player_error: "La página del reproductor informó: {error}.",
       frame_cookie_hint: "Puede que la pantalla no conserve la cookie del reproductor dentro de la aplicación (vea PROTOCOL §5.3). Por favor, comunique este mensaje.",
+      frame_no_session_hint: "La pantalla rechazó la cookie de inicio de sesión del reproductor dentro de la aplicación, así que el reproductor no puede mostrar contenido. Por favor, comunique este mensaje junto con la línea de abajo.",
       frame_footer: "Servidor: {host} · {diag}",
       diag: "RingCast {version} · {platform} · {model}",
       diag_ip: "RingCast {version} · {platform} · {model} · IP {ip}",
