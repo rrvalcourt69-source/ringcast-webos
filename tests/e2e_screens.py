@@ -46,6 +46,8 @@ CORS = {
     "Access-Control-Allow-Methods": "GET, POST, PUT",
     "Access-Control-Expose-Headers": "Retry-After, ETag",
 }
+# webOS's platformBack (BACK from the app's first screen), counted instead of leaving the app
+PLATFORM_STUB = "window.PalmSystem = {platformBack: function () { window.__rcBack = (window.__rcBack || 0) + 1; }};"
 PLAYER_HTML = """<!DOCTYPE html><html><head><meta charset="utf-8"><title>player</title><style>
 html,body{margin:0;height:100%;overflow:hidden;font-family:Helvetica,Arial,sans-serif}
 body{background:linear-gradient(135deg,#1d3a63 0%,#0d1b2e 55%,#25113a 100%);color:#fff}
@@ -248,6 +250,44 @@ def serve(certdir):
     return httpd
 
 
+def key(page, code):
+    page.evaluate(f"document.dispatchEvent(new KeyboardEvent('keydown', {{keyCode: {code}, bubbles: true}}))")
+
+
+def back_key(page):
+    key(page, 461)
+
+
+def center(page, sel):
+    b = page.locator(sel).bounding_box()
+    return b["x"] + b["width"] / 2, b["y"] + b["height"] / 2
+
+
+def hover(page, sel):
+    x, y = center(page, sel)
+    page.mouse.move(x - 5, y - 5)
+    page.mouse.move(x, y, steps=3)
+
+
+def focus_ring(page, sel):
+    """The focused control looks different from the unfocused one: cyan border and glow."""
+    st = page.evaluate("""(s) => { var e = document.querySelector(s), c = getComputedStyle(e);
+        return [c.borderTopColor, c.boxShadow, e.className]; }""", sel)
+    return st[0] == "rgb(0, 198, 255)" and "rgba(0, 198, 255" in st[1] and "focused" in st[2]
+
+
+def in_safe_area(page, sels):
+    """Every visible element is at least 5% from each screen edge (overscan)."""
+    for sel in sels:
+        b = page.locator(sel).bounding_box()
+        if b is None:
+            continue
+        if b["x"] < 96 or b["y"] < 54 or b["x"] + b["width"] > 1920 - 96 or b["y"] + b["height"] > 1080 - 54:
+            print("     outside the safe area:", sel, b)
+            return False
+    return True
+
+
 def main(out):
     out.mkdir(parents=True, exist_ok=True)
     problems = []
@@ -264,6 +304,7 @@ def main(out):
             for lang in ("en-US", "es-ES"):
                 ctx = browser.new_context(viewport={"width": 1920, "height": 1080}, ignore_https_errors=True,
                                           locale=lang)
+                ctx.add_init_script(PLATFORM_STUB)
                 page = ctx.new_page()
                 console = []
                 page.on("console", lambda m: console.append(m.type + ": " + m.text))
@@ -279,6 +320,23 @@ def main(out):
                 check(page.input_value("#addr") == "https://", "address field pre-filled with https://")
                 check(page.evaluate("document.activeElement.id") == "addr", "address field has focus")
                 page.screenshot(path=str(out / "1-address.png"))
+                # BACK on the first screen leaves the app the platform's way
+                back_key(page)
+                check(page.evaluate("window.__rcBack") == 1 and page.is_visible("#s-address"),
+                      "BACK on the first screen calls platformBack")
+                # Magic Remote: hover focuses, the focus is visible, click selects
+                hover(page, "#addr-go")
+                check(page.evaluate("document.activeElement.id") == "addr-go", "pointer hover focuses Connect")
+                check(focus_ring(page, "#addr-go"), "focus on Connect is visible")
+                hover(page, "#addr")
+                check(page.evaluate("document.activeElement.id") == "addr", "pointer hover focuses the address field")
+                check(focus_ring(page, "#addr"), "focus on the address field is visible")
+                hover(page, "#addr-go")
+                page.keyboard.press("Enter")                # pointer shown: OK is the click, not a key
+                page.mouse.click(*center(page, "#addr-go"))
+                page.wait_for_selector("#addr-status.error")
+                check("Enter" in page.inner_text("#addr-status"), "click on Connect submits (empty address explained)")
+                check(in_safe_area(page, ["#addr", "#addr-go", "#addr-keys", "#diag"]), "address screen inside the overscan-safe area")
                 # a wrong address: error message
                 page.fill("#addr", "http://192.0.2.10")
                 page.keyboard.press("ArrowDown")
@@ -312,6 +370,22 @@ def main(out):
                       "set_orientation", "unpair"], "pair/request carries platform and capabilities")
                 check("mac_address" not in req, "no MAC address without the webOS bus")
                 # BLUE: change server, BACK: keep it
+                check(page.evaluate("document.activeElement.id") == "change-server", "pairing: the change-server button has the focus")
+                check(focus_ring(page, "#change-server"), "focus on the change-server button is visible")
+                check(in_safe_area(page, ["#code", "#change-server", "#diag", "#code-server"]), "pairing screen inside the overscan-safe area")
+                for k in (403, 404, 405, 49, 457):          # colour, number, info keys: nothing happens
+                    key(page, k)
+                page.mouse.move(960, 200)                   # pointer over an empty area: OK does nothing
+                page.keyboard.press("Enter")
+                time.sleep(0.5)
+                check(page.is_visible("#s-code"), "colour/number keys and OK over an empty area change nothing")
+                hover(page, "#change-server")
+                page.mouse.click(*center(page, "#change-server"))
+                page.wait_for_selector("#s-address:not([hidden])")
+                check(page.input_value("#addr") == ORIGIN, "click on the change-server button opens the address screen")
+                page.keyboard.press("Escape")
+                page.wait_for_selector("#s-code:not([hidden])", timeout=20000)
+                page.keyboard.press("ArrowDown")            # back to the remote's arrows (pointer hidden)
                 page.keyboard.press("F1")                   # unrelated key: nothing happens
                 page.evaluate("document.dispatchEvent(new KeyboardEvent('keydown', {keyCode: 406, bubbles: true}))")
                 page.wait_for_selector("#s-address:not([hidden])")
@@ -338,6 +412,16 @@ def main(out):
                 check(S.pages_served >= 1, "player page loaded in the frame with its cookie")
                 check(S.pages_refused == 0, "the frame's cookie was accepted")
                 page.screenshot(path=str(out / "4-playing.png"))
+                # BACK while playing (standard TV): the app leaves the platform's way, nothing else
+                n_back = page.evaluate("window.__rcBack")
+                hover(page, "#s-player")                    # the pointer over the content
+                page.mouse.click(960, 540)
+                check(page.evaluate("document.activeElement.tagName") != "IFRAME", "the player frame never takes the focus")
+                back_key(page)
+                time.sleep(1)
+                check(page.evaluate("window.__rcBack") == n_back + 1, "BACK while playing calls platformBack")
+                check(page.is_visible("#s-player") and page.evaluate("localStorage.getItem('rc.token')") is not None,
+                      "BACK while playing keeps the pairing and the player")
                 frame_attrs = page.evaluate("""(() => { var f = document.querySelector('#frame-box iframe');
                     return [f.getAttribute('allow'), f.getAttribute('sandbox'), getComputedStyle(f).borderTopWidth]; })()""")
                 check("autoplay" in frame_attrs[0] and frame_attrs[2] == "0px", f"frame allows autoplay, no border {frame_attrs}")

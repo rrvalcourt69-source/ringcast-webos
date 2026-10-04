@@ -3,6 +3,9 @@
  * Copyright (C) 2026 NetRing Tech Services, LLC
  *
  * Screens drawn for 1920x1080 and read from across a room: big type, high contrast.
+ * Everything the app draws stays inside the overscan-safe area (at least 5% from each edge:
+ * 96 px left and right, 54 px top and bottom); only the player's content fills the screen.
+ * Every control shows its focus (remote and Magic Remote pointer) with the cyan ring.
  * Chromium 68 (webOS 5): no inset, aspect-ratio, flex gap, clamp() or :is().
  */
 :root {
@@ -50,9 +53,9 @@ body {
   left: 0;
   top: 0;
   width: 1920px;
-  height: 1000px;
+  height: 940px;
   box-sizing: border-box;
-  padding: 90px 160px 0 160px;
+  padding: 70px 160px 0 160px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -146,6 +149,11 @@ h1 {
   outline: none;
 }
 
+#addr,
+#addr-go {
+  cursor: pointer;
+}
+
 #addr-go {
   min-width: 340px;
   height: 120px;
@@ -224,16 +232,15 @@ h1 {
 #footer {
   position: absolute;
   left: 0;
-  bottom: 0;
+  bottom: 56px;
   width: 1920px;
-  height: 80px;
+  height: 84px;
   box-sizing: border-box;
-  padding: 0 60px;
+  padding: 0 110px;
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  background: rgba(0, 0, 0, 0.25);
   font-size: 28px;
   color: var(--dim);
 }
@@ -241,8 +248,22 @@ h1 {
 .key-hint {
   display: flex;
   align-items: center;
+  height: 72px;
+  padding: 0 24px 0 16px;
+  border: 4px solid #3a5577;
+  border-radius: 36px;
+  background: var(--panel);
   color: var(--soft);
+  font-size: 28px;
+  font-family: inherit;
   cursor: pointer;
+  outline: none;
+}
+
+.key-hint.focused,
+.key-hint:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 8px rgba(0, 198, 255, 0.35);
 }
 
 .blue-dot {
@@ -283,6 +304,8 @@ h1 {
   margin: 0;
   padding: 0;
   background: #000;
+  /* signage content is not interactive: the pointer and the keys stay with the app (BACK) */
+  pointer-events: none;
 }
 
 .player-wait {
@@ -318,8 +341,8 @@ h1 {
 
 .marker {
   position: absolute;
-  right: 24px;
-  bottom: 20px;
+  right: 110px;
+  bottom: 64px;
   padding: 6px 18px;
   border-radius: 20px;
   background: rgba(0, 0, 0, 0.55);

@@ -1,14 +1,28 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 NetRing Tech Services, LLC
 //
-// The screens and the TV remote. Every server value is inserted with textContent (never as
-// HTML). Remote keys: arrows, OK (Enter), BACK (461), BLUE (406). OK or BLUE on the pairing
-// and message screens changes the server address. Nothing secret is ever shown.
+// The screens, the TV remote and the Magic Remote pointer. Every server value is inserted with
+// textContent (never as HTML). Nothing secret is ever shown.
+//
+// Remote keys: arrows move the focus, OK (Enter) selects, BLUE (406) changes the server on the
+// pairing and message screens. BACK (461): on the address screen opened from pairing it keeps
+// the current server; everywhere else it leaves the app the platform's way (webOS hides or
+// closes it), except while a signage display (lg-signage) plays, where it is ignored. EXIT and
+// HOME are handled by webOS itself; other keys (colour, numbers) do nothing.
+// Magic Remote: the control under the pointer takes the focus; OK clicks it. While the pointer
+// is shown, OK is left to that click, so a press over an empty area does nothing.
 (function (root) {
   "use strict";
   var RC = root.RC = root.RC || {};
 
   var KEY = { ENTER: 13, ESC: 27, LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, BACK: 461, BLUE: 406 };
+  // Controls of each screen, in focus order (arrows move along this list).
+  var CONTROLS = {
+    "s-address": ["addr", "addr-go"],
+    "s-connecting": ["change-server"],
+    "s-code": ["change-server"],
+    "s-message": ["change-server"]
+  };
   var SCREENS = ["s-address", "s-connecting", "s-code", "s-claimed", "s-message", "s-player"];
   var FRAME_ALLOW = "autoplay; fullscreen; encrypted-media";
   // The player page runs scripts and keeps its own cookie; it may not navigate the app away.
@@ -26,6 +40,11 @@
     this.frameInfo = { state: "none", since: 0, error: "" };
     this.lastDiag = null;
     this.markers = { offline: false, old: false };
+    this.pointer = false;               // Magic Remote pointer shown
+    this.focused = "";
+    this.leave = function () {
+      return !!(RC.platform && RC.platform.platformBack && RC.platform.platformBack());
+    };
   }
 
   UI.prototype.$ = function (id) {
@@ -48,10 +67,45 @@
     this.doc.addEventListener("keyboardStateChange", function (e) {
       self.vkbVisible = !!(e && e.detail && e.detail.visibility);
     });
+    // webOS reports the Magic Remote pointer appearing and hiding; any mouse movement counts too.
+    this.doc.addEventListener("cursorStateChange", function (e) {
+      self.pointer = !!(e && e.detail && e.detail.visibility);
+    });
+    // Chromium also sends mouse events when the page changes under a still pointer: only a real
+    // movement counts.
+    var last = "";
+    this.doc.addEventListener("mousemove", function (e) {
+      var at = e.screenX + "," + e.screenY;
+      if (last && at !== last) self.pointer = true;
+      last = at;
+      if (self.pointer) self.hoverFocus(e.target);
+    }, true);
     this.$("addr-go").addEventListener("click", function () { self.submitAddress(); });
-    this.$("footer-key").addEventListener("click", function () { self.agent.changeServer(); });
-    this.$("addr").addEventListener("focus", function () { self.mark("addr"); });
-    this.$("addr-go").addEventListener("focus", function () { self.mark("addr-go"); });
+    this.$("change-server").addEventListener("click", function () {
+      if (self.agent) self.agent.changeServer();
+    });
+    var ids = ["addr", "addr-go", "change-server"];
+    ids.forEach(function (id) {
+      var el = self.$(id);
+      el.addEventListener("focus", function () { self.mark(id); });
+      el.addEventListener("mouseover", function (e) {
+        if (self.pointer) self.hoverFocus(e.target);
+      });
+    });
+    // The player frame never takes the keyboard focus (BACK must reach the app): it ignores
+    // the pointer (css), and focus is taken back should the page grab it.
+    this.win.addEventListener("blur", function () {
+      setTimeout(function () {
+        if (self.frame && self.doc.activeElement === self.frame) {
+          try {
+            self.frame.blur();
+            self.win.focus();
+          } catch (e) {
+            // ignore
+          }
+        }
+      }, 0);
+    });
     this.win.addEventListener("message", function (e) { self.onFrameMessage(e); });
     this.win.addEventListener("resize", function () { self.fit(); });
     this.fit();
@@ -78,8 +132,36 @@
     // The key hint and diagnostics belong to the setup screens, not to the content.
     var footer = id === "s-code" || id === "s-message" || id === "s-connecting";
     this.$("footer").hidden = !(footer || id === "s-address");
-    this.$("footer-key").hidden = !footer;
+    this.$("change-server").hidden = !footer;
     if (id !== "s-player") this.stopPlayer();
+    var c = this.controls();
+    if (c.length && c.indexOf(this.focused) < 0) this.focus(c[0]);
+    else if (!c.length) this.blurAll();
+  };
+
+  // Hover focus: the control under the pointer is the focused one.
+  UI.prototype.hoverFocus = function (node) {
+    var c = this.controls();
+    for (var n = node, depth = 0; n && depth < 4; n = n.parentNode, depth++) {
+      if (n.id && c.indexOf(n.id) >= 0) {
+        if (this.focused !== n.id) this.focus(n.id);
+        return;
+      }
+    }
+  };
+
+  UI.prototype.controls = function () {
+    return CONTROLS[this.current] || [];
+  };
+
+  UI.prototype.blurAll = function () {
+    var a = this.doc.activeElement;
+    try {
+      if (a && a !== this.doc.body && a.blur) a.blur();
+    } catch (e) {
+      // ignore
+    }
+    this.mark("");
   };
 
   UI.prototype.startCountdown = function (id, key, seconds) {
@@ -123,9 +205,10 @@
     this.canGoBack = !!o.canGoBack;
     this.$("addr").value = o.value || "https://";
     this.setText("addr-keys", RC.t(this.canGoBack ? "addr_keys_back" : "addr_keys"));
-    this.status("", false);
+    this.status(o.error ? RC.t("err_" + o.error, { host: o.host || "" }) : "", !!o.error);
     this.busy = false;
-    this.focus("addr");
+    // A pre-filled address that failed its check: Connect has the focus, so OK tries again.
+    this.focus(o.error ? "addr-go" : "addr");
   };
 
   UI.prototype.status = function (s, isError) {
@@ -154,8 +237,12 @@
   };
 
   UI.prototype.mark = function (id) {
-    this.$("addr").className = id === "addr" ? "focusable focused" : "focusable";
-    this.$("addr-go").className = id === "addr-go" ? "focusable focused" : "focusable";
+    var ids = ["addr", "addr-go", "change-server"];
+    for (var i = 0; i < ids.length; i++) {
+      var el = this.$(ids[i]);
+      var base = ids[i] === "change-server" ? "focusable key-hint" : "focusable";
+      el.className = ids[i] === id ? base + " focused" : base;
+    }
     this.focused = id;
   };
 
@@ -318,21 +405,38 @@
   };
 
   // ── remote keys ───────────────────────────────────────────────────────
+  // BACK from anywhere but the address screen opened from pairing: leave the app the platform's
+  // way. A signage display (lg-signage) that is playing ignores it: it plays unattended.
+  UI.prototype.back = function () {
+    if (this.current === "s-address" && this.canGoBack && this.agent && this.agent.cancelAddress()) return;
+    if (this.current === "s-player" && this.agent && this.agent.config && this.agent.config.platform === "lg-signage") return;
+    this.leave();
+  };
+
   UI.prototype.onKey = function (e) {
     var k = e.keyCode;
+    if (k === KEY.BACK) {
+      e.preventDefault();
+      if (!this.vkbVisible) this.back();       // with the keyboard open, BACK just closes it
+      return;
+    }
+    if (k === KEY.LEFT || k === KEY.RIGHT || k === KEY.UP || k === KEY.DOWN) this.pointer = false;
+    if (k === KEY.ENTER && this.pointer && !this.vkbVisible) {
+      // The pointer is shown: OK is the click on the control under it (a separate mouse event),
+      // so the key itself must not also activate whatever control has the focus.
+      e.preventDefault();
+      return;
+    }
     // BLUE, or OK on the setup screens (not every remote has colour buttons): change the server.
-    if (k === KEY.BLUE || (k === KEY.ENTER && (this.current === "s-code" || this.current === "s-message"))) {
+    if (k === KEY.BLUE || (k === KEY.ENTER && (this.current === "s-code"
+        || this.current === "s-message" || this.current === "s-connecting"))) {
       if (this.agent && this.agent.changeServer()) e.preventDefault();
       return;
     }
-    if (this.current !== "s-address") {
-      if (k === KEY.BACK) e.preventDefault();       // a signage screen stays where it is
-      return;
-    }
+    if (this.current !== "s-address") return;
     var inField = this.focused === "addr";
-    if (k === KEY.BACK || (k === KEY.ESC && !this.vkbVisible)) {
+    if (k === KEY.ESC && !this.vkbVisible) {
       if (this.canGoBack && this.agent.cancelAddress()) e.preventDefault();
-      else if (k === KEY.BACK) e.preventDefault();
       return;
     }
     if (k === KEY.DOWN || (k === KEY.RIGHT && !inField)) {
@@ -350,16 +454,16 @@
       return;
     }
     if (k === KEY.ENTER) {
-      if (!inField) {
-        e.preventDefault();
-        this.submitAddress();
-        return;
-      }
       if (this.vkbVisible) {
         // "Done" on the on-screen keyboard: close it and go to Connect.
         e.preventDefault();
         this.$("addr").blur();
         this.focus("addr-go");
+        return;
+      }
+      if (!inField) {
+        e.preventDefault();
+        this.submitAddress();
         return;
       }
       // Keyboard closed: OK opens it (the default action) unless an address is already typed.
