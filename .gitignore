@@ -10,3 +10,4 @@ secrets/
 test-output/
 __pycache__/
 build/
+tools/lg-cli/
