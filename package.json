@@ -1,0 +1,10 @@
+{
+  "name": "ringcast-webos",
+  "private": true,
+  "description": "Development tools for the RingCast app for LG webOS displays (the app itself has no build step).",
+  "license": "AGPL-3.0-only",
+  "devDependencies": {
+    "@webos-tools/cli": "^3.2.6",
+    "tweetnacl": "^1.0.3"
+  }
+}
