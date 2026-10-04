@@ -35,7 +35,7 @@ from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parent.parent
 # RINGCAST_APP_DIR: test an unpacked package instead of the source tree (tools/build.sh output)
-APP_DIR = Path(os.environ.get("RINGCAST_APP_DIR") or ROOT / "app")
+APP_DIR = Path(os.environ.get("RINGCAST_APP_DIR") or ROOT / "app").resolve()
 PORT = 8443
 HOST = "signage.example.com"
 ORIGIN = f"https://{HOST}:{PORT}"
@@ -56,7 +56,7 @@ h1{position:absolute;left:120px;top:230px;margin:0;font-size:150px;line-height:1
 p{position:absolute;left:120px;top:590px;margin:0;font-size:56px;color:#d8e4f2;width:1300px}
 .clock{position:absolute;right:120px;bottom:100px;font-size:120px;font-weight:700;color:#7fd8ff}
 </style></head><body><div class="k">Sample content</div><h1>Welcome to<br>the lobby</h1>
-<p>This is a stand-in for the server's player page, shown in the app's full-screen frame.</p>
+<p>Messages, menus and schedules from your NetRing Signage Manager server, played full screen.</p>
 <div class="clock" id="c"></div><script>
 function t(){var d=new Date();document.getElementById("c").textContent=("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);}
 t();setInterval(t,1000);
