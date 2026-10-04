@@ -63,6 +63,7 @@ function makeEnv(opts) {
       reloadApp: () => { server.ev("reload"); },
       log: (m) => logs.push(m),
       claimedSeconds: opts.claimedSeconds,
+      readLocal: opts.readLocal,
     });
   }
   const env = { RC, clock, server, mem, ui, calls, logs, info, newAgent };
@@ -497,6 +498,7 @@ test("address: first start asks for it; a NetRing server is accepted and pairing
   e.agent.start();
   assert.strictEqual(e.uiCalls("address")[0].v.value, "https://");
   assert.strictEqual(e.uiCalls("address")[0].v.canGoBack, false);
+  assert.strictEqual(e.uiCalls("address")[0].v.error, "");
   assert.strictEqual(plain(await e.agent.submitAddress("https://other.example.com")).error, "unreachable");
   assert.strictEqual(plain(await e.agent.submitAddress("http://signage.example.com")).error, "https_only");
   const ok = await e.agent.submitAddress("https://Signage.Example.com/");
@@ -543,6 +545,77 @@ test("address: the check corrects a wrong device clock before the first signatur
   assert.strictEqual((await e.agent.submitAddress(ORIGIN)).ok, true);
   await e.until(() => e.uiCalls("code").length > 0, "code");
   assert.strictEqual(e.server.times(PATH + "pair/request").length, 1, "no bad_timestamp round trip");
+  e.stop();
+});
+
+// ── server.json shipped with a signage display's app ───────────────────────
+function preset(text) {
+  const reads = [];
+  return { reads, fn: async (name) => { reads.push(name); if (text instanceof Error) throw text; return text; } };
+}
+
+test("preset: a server.json address is checked and the screen goes straight to its pairing code", async () => {
+  const r = preset(JSON.stringify({ server: "https://Signage.Example.com/" }));
+  const e = makeEnv({ server_address: false, readLocal: r.fn });
+  e.agent.start();
+  await e.until(() => e.uiCalls("code").length > 0, "code");
+  assert.deepStrictEqual(r.reads, ["server.json"]);
+  assert.strictEqual(e.uiCalls("address").length, 0, "no address screen");
+  assert.strictEqual(e.mem["rc.server"], ORIGIN);
+  assert.ok(e.server.requests.some((x) => x.path === PATH + "time"), "checked like a typed address");
+  e.stop();
+});
+
+test("preset: a failing server.json address is shown on the address screen with the reason", async () => {
+  const e = makeEnv({ server_address: false, readLocal: preset(JSON.stringify({ server: ORIGIN })).fn });
+  e.server.override[PATH + "time"] = ["down", "down"];
+  e.agent.start();
+  await e.until(() => e.uiCalls("address").length > 0, "address");
+  const a = e.uiCalls("address")[0].v;
+  assert.deepStrictEqual(plain(a), { value: ORIGIN, canGoBack: false, error: "unreachable", host: "signage.example.com" });
+  assert.strictEqual(e.mem["rc.server"], undefined, "nothing saved");
+  assert.strictEqual(e.uiCalls("connecting").length, 1);
+  // the address screen works as usual from there
+  assert.strictEqual((await e.agent.submitAddress(ORIGIN)).ok, true);
+  await e.until(() => e.uiCalls("code").length > 0, "code");
+  e.stop();
+});
+
+test("preset: anything but a valid https address in server.json is ignored", async () => {
+  const bad = [null, "", "not json", "[]", "\"https://signage.example.com\"", JSON.stringify({}),
+    JSON.stringify({ server: "http://signage.example.com" }), JSON.stringify({ server: "https://signage.example.com/x" }),
+    JSON.stringify({ server: 42 }), JSON.stringify({ server: "https://user:pw@signage.example.com" }),
+    JSON.stringify({ server: ORIGIN, pad: "x".repeat(5000) }), new Error("read failed")];
+  for (const text of bad) {
+    const e = makeEnv({ server_address: false, readLocal: preset(text).fn });
+    e.agent.start();
+    await e.until(() => e.uiCalls("address").length > 0, "address");
+    assert.deepStrictEqual(plain(e.uiCalls("address")[0].v), { value: "https://", canGoBack: false, error: "", host: "" },
+      String(text).slice(0, 60));
+    assert.strictEqual(e.server.requests.length, 0, "no request for " + String(text).slice(0, 60));
+    e.stop();
+  }
+});
+
+test("preset: only server is used; other fields in server.json change nothing", async () => {
+  const text = JSON.stringify({ server: ORIGIN, token: "x".repeat(43), device_id: "d_1", platform: "pi", version: "9" });
+  const e = makeEnv({ server_address: false, readLocal: preset(text).fn });
+  e.agent.start();
+  await e.until(() => e.uiCalls("code").length > 0, "code");
+  assert.strictEqual(e.mem["rc.token"], undefined);
+  assert.strictEqual(e.mem["rc.device_id"], undefined);
+  const b = e.server.events.find((x) => x.what === "pair_request").body;
+  assert.strictEqual(b.platform, "lg-tv");
+  assert.strictEqual(b.client_version, "0.1.0");
+  e.stop();
+});
+
+test("preset: a saved server wins; server.json isn't read", async () => {
+  const r = preset(JSON.stringify({ server: "https://other.example.com" }));
+  const e = makeEnv({ readLocal: r.fn });
+  e.agent.start();
+  await e.until(() => e.uiCalls("code").length > 0, "code");
+  assert.deepStrictEqual(r.reads, []);
   e.stop();
 });
 

@@ -31,6 +31,32 @@
     };
   }
 
+  // A file shipped inside the app (server.json, see agent.js), as text; null when it isn't
+  // there. XMLHttpRequest, because the app's page is a file:// page and fetch() can't read those.
+  function readLocal(name) {
+    return new Promise(function (resolve) {
+      var done = false;
+      function finish(v) {
+        if (done) return;
+        done = true;
+        resolve(v);
+      }
+      setTimeout(function () { finish(null); }, 4000);
+      try {
+        var x = new root.XMLHttpRequest();
+        x.open("GET", name, true);
+        x.timeout = 3000;
+        x.onload = function () {
+          finish((x.status === 200 || x.status === 0) && typeof x.responseText === "string" ? x.responseText : null);
+        };
+        x.onerror = x.ontimeout = x.onabort = function () { finish(null); };
+        x.send();
+      } catch (e) {
+        finish(null);
+      }
+    });
+  }
+
   function start() {
     var ls = storage();
     if (!ls) log("localStorage unavailable: settings won't survive a restart");
@@ -43,6 +69,7 @@
       platform: RC.platform,
       config: RC.config,
       reloadApp: function () { root.location.reload(); },
+      readLocal: readLocal,
       log: log
     });
     ui.init(agent);

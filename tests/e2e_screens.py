@@ -288,6 +288,35 @@ def in_safe_area(page, sels):
     return True
 
 
+def preset_checks(pw, td, check):
+    """A signage display's app installed from a server carries server.json at its root."""
+    import shutil
+    # webOS lets an app's own page read its files; desktop Chromium needs a flag for that
+    browser = pw.chromium.launch(args=[f"--host-resolver-rules=MAP {HOST} 127.0.0.1, MAP other.example.com 127.0.0.1",
+                                       "--no-proxy-server", "--allow-file-access-from-files"])
+    for name, server, extra in (("good", ORIGIN, {}), ("down", "https://other.example.com:9", {}),
+                                ("extra", ORIGIN, {"token": "x" * 43, "server2": "https://evil.example.net"})):
+        app = td / ("app-" + name)
+        shutil.copytree(APP_DIR, app)
+        (app / "server.json").write_text(json.dumps(dict({"server": server}, **extra)))
+        ctx = browser.new_context(viewport={"width": 1920, "height": 1080}, ignore_https_errors=True, locale="en-US")
+        page = ctx.new_page()
+        page.goto((app / "index.html").as_uri())
+        if name == "down":
+            page.wait_for_selector("#s-address:not([hidden])", timeout=40000)
+            check(page.input_value("#addr") == server and page.evaluate("document.activeElement.id") == "addr-go"
+                  and "other.example.com" in page.inner_text("#addr-status"),
+                  "server.json: a failing address is shown pre-filled with the reason, Connect focused")
+            check(page.evaluate("localStorage.getItem('rc.server')") is None, "server.json: nothing saved on failure")
+        else:
+            page.wait_for_selector("#s-code:not([hidden])", timeout=40000)
+            check(page.evaluate("localStorage.getItem('rc.server')") == ORIGIN,
+                  f"server.json ({name}): straight to the pairing code, server saved")
+            check(page.evaluate("localStorage.getItem('rc.token')") is None, f"server.json ({name}): nothing else taken from it")
+        ctx.close()
+    browser.close()
+
+
 def main(out):
     out.mkdir(parents=True, exist_ok=True)
     problems = []
@@ -497,8 +526,10 @@ def main(out):
                 errors = [c for c in console if c.startswith("error") or c.startswith("pageerror")]
                 # Expected noise: refused sessions (403) and current Chromium's notice about frame features
                 # delegated from a file:// page (webOS 5's engine predates it; autoplay is checked on the TV).
+                # Also expected: the look for server.json, which isn't there (and which desktop
+                # Chromium refuses from a file:// page without --allow-file-access-from-files).
                 errors = [c for c in errors if "403" not in c and "Failed to load resource" not in c
-                          and "Potential permissions policy violation" not in c]
+                          and "Potential permissions policy violation" not in c and "server.json" not in c]
                 check(not errors, "no script errors " + repr(errors[:3]))
                 logged = "\n".join(console)
                 seed = json.loads(stored).get("rc.seed", "")
@@ -506,6 +537,7 @@ def main(out):
                       "key and token never logged")
                 ctx.close()
             browser.close()
+            preset_checks(pw, Path(td), check)
         httpd.shutdown()
     print(f"screenshots in {out}")
     return 1 if problems else 0

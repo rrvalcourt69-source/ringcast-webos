@@ -38,6 +38,7 @@
     this.platform = deps.platform;
     this.config = deps.config;
     this.reloadApp = deps.reloadApp || function () {};
+    this.readLocal = deps.readLocal || null;
     this.log = deps.log || function () {};
     this.claimedSeconds = deps.claimedSeconds === undefined ? CLAIMED_S : deps.claimedSeconds;
     this.startedAt = this.now();
@@ -149,19 +150,75 @@
     this.key = this.store.key();
     this.setServer(this.store.server());
     this.ui.setDiag(this.diag());
-    if (!this.origin) return this.enterAddress(false);
+    if (!this.origin) return this.firstStart();
     if (this.store.token() && this.store.deviceId()) return this.run();
     return this.pair();
   };
 
   // ── server address ────────────────────────────────────────────────────
-  Agent.prototype.enterAddress = function (canGoBack) {
+  Agent.prototype.enterAddress = function (canGoBack, value, error, host) {
     this.newFlow("address");
-    this.ui.showAddress({ value: this.origin || "https://", canGoBack: !!canGoBack });
+    this.ui.showAddress({ value: value || this.origin || "https://", canGoBack: !!canGoBack, error: error || "",
+      host: host || "" });
+  };
+
+  // The server's address shipped with the app: a signage display installed from a server gets
+  // the app with server.json at its root, {"server": "https://<host>"}. Only that one value is
+  // read, and only as an address to check like a typed one. "" when there is none.
+  Agent.prototype.presetServer = async function () {
+    if (!this.readLocal) return "";
+    var txt, o;
+    try {
+      txt = await this.readLocal("server.json");
+    } catch (e) {
+      return "";
+    }
+    if (typeof txt !== "string" || !txt || txt.length > 4096) return "";
+    try {
+      o = JSON.parse(txt);
+    } catch (e) {
+      return "";
+    }
+    if (!RC.core.isObject(o) || typeof o.server !== "string") return "";
+    var p = RC.core.parseServerAddress(o.server);
+    return p.ok ? p.origin : "";
+  };
+
+  // First start (no server saved): check the preset address, if any, and go straight to the
+  // pairing code; when it fails, the address screen shows it with the reason.
+  Agent.prototype.firstStart = async function () {
+    if (!this.readLocal) return this.enterAddress(false);
+    var gen = this.newFlow("preset");
+    var value = await this.presetServer();
+    if (gen !== this.gen) return;
+    if (!value) return this.enterAddress(false);
+    this.preset = value;
+    var p = RC.core.parseServerAddress(value);
+    this.log("checking the preset server " + p.host);
+    this.ui.showConnecting(p.host);
+    var res;
+    try {
+      res = await RC.http.checkServer(this.fetch, p.origin, p.host);
+    } catch (e) {
+      res = { ok: false, error: "unreachable" };
+    }
+    if (gen !== this.gen) return;
+    if (!res.ok) {
+      this.log("preset server not accepted: " + res.error);
+      return this.enterAddress(false, p.origin, res.error, p.host);
+    }
+    this.fixClock(res.t);
+    this.store.setServer(p.origin);
+    this.setServer(p.origin);
+    this.pair();
   };
 
   // From the pairing and message screens only (the BLUE remote key): a playing screen ignores it.
   Agent.prototype.changeServer = function () {
+    if (this.mode === "preset" && this.preset) {
+      this.enterAddress(false, this.preset);
+      return true;
+    }
     if (this.mode !== "pairing") return false;
     this.enterAddress(true);
     return true;
