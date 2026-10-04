@@ -24,7 +24,7 @@ RingCast client for Raspberry Pi. Security notes: SECURITY.txt.
 
 Using it
 --------
-Remote keys: arrows to move, OK to type or select, BACK, and the BLUE button.
+Remote keys: arrows to move, OK to type or select, BACK, and (optionally) the BLUE button.
 
 1. Server address. On first start, enter the server's address, for example
    https://signage.example.com (it is pre-filled with https://). Select the field and press OK
@@ -41,10 +41,11 @@ Remote keys: arrows to move, OK to type or select, BACK, and the BLUE button.
 4. Then it plays. A small "Offline" marker appears in the corner while the server can't be
    reached; the content keeps playing.
 
-Changing the server address later: press the BLUE button on the pairing screen (or on a
-"Can't reach the server" screen). BACK keeps the current address. A paired display ignores the
-BLUE button while it plays, so a stray key press can't interrupt it: first remove the screen in
-the dashboard (or send it the Unpair command), then press BLUE on the pairing screen.
+Changing the server address later: press OK (or the BLUE button, on remotes that have colour
+buttons) on the pairing screen or on a "Can't reach the server" screen. BACK keeps the current
+address. A playing display ignores these keys, so a stray key press can't interrupt it: first
+remove the screen in the dashboard (or send it the unpair command), then press OK on the
+pairing screen.
 
 Commands the app carries out (PROTOCOL §5.2): refresh (new player session), restart_player
 (reloads the app), set_orientation (the content is turned in the app, for portrait-mounted

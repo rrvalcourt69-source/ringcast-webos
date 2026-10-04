@@ -87,6 +87,6 @@ Other rules
 - Numbers from the server are clamped to the ranges in PROTOCOL.txt.
 - The app carries out only refresh, restart_player, set_orientation and unpair. It never
   changes its server on a command (no set_server): the address can only be changed on the
-  display itself, with the remote, from the pairing screen.
+  display itself, with the remote, from the pairing screen (OK or BLUE).
 - Command results are posted before restart_player and unpair act; command ids are remembered
   so a command runs at most once.

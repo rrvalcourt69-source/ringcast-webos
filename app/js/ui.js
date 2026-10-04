@@ -2,8 +2,8 @@
 // Copyright (C) 2026 NetRing Tech Services, LLC
 //
 // The screens and the TV remote. Every server value is inserted with textContent (never as
-// HTML). Remote keys: arrows, OK (Enter), BACK (461), BLUE (406, change the server address
-// from the pairing screens). Nothing secret is ever shown.
+// HTML). Remote keys: arrows, OK (Enter), BACK (461), BLUE (406). OK or BLUE on the pairing
+// and message screens changes the server address. Nothing secret is ever shown.
 (function (root) {
   "use strict";
   var RC = root.RC = root.RC || {};
@@ -49,6 +49,7 @@
       self.vkbVisible = !!(e && e.detail && e.detail.visibility);
     });
     this.$("addr-go").addEventListener("click", function () { self.submitAddress(); });
+    this.$("footer-key").addEventListener("click", function () { self.agent.changeServer(); });
     this.$("addr").addEventListener("focus", function () { self.mark("addr"); });
     this.$("addr-go").addEventListener("focus", function () { self.mark("addr-go"); });
     this.win.addEventListener("message", function (e) { self.onFrameMessage(e); });
@@ -322,7 +323,8 @@
   // ── remote keys ───────────────────────────────────────────────────────
   UI.prototype.onKey = function (e) {
     var k = e.keyCode;
-    if (k === KEY.BLUE) {
+    // BLUE, or OK on the setup screens (not every remote has colour buttons): change the server.
+    if (k === KEY.BLUE || (k === KEY.ENTER && (this.current === "s-code" || this.current === "s-message"))) {
       if (this.agent && this.agent.changeServer()) e.preventDefault();
       return;
     }

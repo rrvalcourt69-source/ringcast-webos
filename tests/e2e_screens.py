@@ -316,6 +316,11 @@ def main(out):
                 page.evaluate("document.dispatchEvent(new KeyboardEvent('keydown', {keyCode: 461, bubbles: true}))")
                 page.wait_for_selector("#s-code:not([hidden])", timeout=20000)
                 check(True, "BACK returns to pairing")
+                page.keyboard.press("Enter")                # OK works too (remotes without colour keys)
+                page.wait_for_selector("#s-address:not([hidden])")
+                check(True, "OK on the pairing screen opens the address screen")
+                page.keyboard.press("Escape")
+                page.wait_for_selector("#s-code:not([hidden])", timeout=20000)
                 # claim
                 S.claim_next = ("Lobby Left", "Example Co")
                 page.wait_for_selector("#s-claimed:not([hidden])", timeout=20000)

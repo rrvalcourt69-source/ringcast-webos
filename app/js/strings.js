@@ -35,7 +35,7 @@
       pair_server: "Server: {host}",
       pair_poll_problem: "Can't reach the server right now. Retrying…",
       pair_expires: "A new code appears automatically when this one expires.",
-      key_blue: "BLUE button: change the server address",
+      key_blue: "OK or BLUE button: change the server address",
       connecting: "Connecting to {host}…",
       // claimed
       claimed_title: "Screen added",
@@ -97,7 +97,7 @@
       pair_server: "Servidor: {host}",
       pair_poll_problem: "No se puede conectar con el servidor ahora mismo. Reintentando…",
       pair_expires: "Cuando este código caduque aparecerá uno nuevo automáticamente.",
-      key_blue: "Botón AZUL: cambiar la dirección del servidor",
+      key_blue: "OK o botón AZUL: cambiar la dirección del servidor",
       connecting: "Conectando con {host}…",
       claimed_title: "Pantalla añadida",
       claimed_by: "Añadida por {account}",

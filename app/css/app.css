@@ -242,6 +242,7 @@ h1 {
   display: flex;
   align-items: center;
   color: var(--soft);
+  cursor: pointer;
 }
 
 .blue-dot {
