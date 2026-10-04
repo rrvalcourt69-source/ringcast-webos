@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.ipk
+*.env
+*.key
+*.pem
+*.token
+secrets/
+.claude/
