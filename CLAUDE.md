@@ -40,6 +40,12 @@ Services, LLC. Licence: **AGPL-3.0**. Private now, **public** at launch: write a
 Rick works from Windows over VPN (PuTTY, WinSCP in binary mode) and prefers .ps1 scripts he can
 run over pasted blocks, plus concise, actionable answers.
 
+**Always supply both (decided 2026-10-04):** whenever Rick has to run something, attach every
+script in the chat (and put it on I:), **and** write out the exact commands in the reply, ready
+to copy and paste, in order: PowerShell on his PC, then bash on the server (PuTTY), with full
+paths and file names, each followed by a command that verifies it worked. Never just name a
+script or point at a README.
+
 ## Releasing
 
 The LG app ships inside the NetRing Signage Manager release (the server publishes it at `/lg/`).
