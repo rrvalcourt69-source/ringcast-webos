@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 NetRing Tech Services, LLC
 //
-// Starts the app: storage, screens, the agent, and (on standard TVs) the screen-saver opt-out.
+// Starts the app: storage, screens and the agent.
 (function (root) {
   "use strict";
   var RC = root.RC;
-  var APP_ID = "com.netringtech.ringcast";
 
   function log(msg) {
     try {
@@ -48,11 +47,6 @@
     });
     ui.init(agent);
     RC.app = { agent: agent, ui: ui };
-    try {
-      RC.platform.keepScreenOn(APP_ID);
-    } catch (e) {
-      log("screen saver opt-out not available");
-    }
     agent.start();
     log("RingCast " + RC.config.version + " (" + RC.config.platform + ") started");
   }

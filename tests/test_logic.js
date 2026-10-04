@@ -203,13 +203,76 @@ test("platform: without the webOS bus everything is empty, nothing throws", asyn
   const i = await RC.platform.info();
   eq(i, { mac: "", ip: "", model: "", tier: "webos" });
   assert.strictEqual(await RC.platform.currentIp(), "");
-  assert.strictEqual(typeof RC.platform.keepScreenOn("x"), "function");
+  assert.strictEqual(RC.platform.platformBack(), false);
+});
+
+test("platform: BACK from the first screen uses the platform's own call", () => {
+  let n = 0;
+  const R = load(CORE.concat(["js/platform.js"]), { globals: { PalmSystem: { platformBack: () => { n++; } } } }).RC;
+  assert.strictEqual(R.platform.platformBack(), true);
+  assert.strictEqual(n, 1);
+  const W = load(CORE.concat(["js/platform.js"]), { globals: { webOSSystem: { platformBack: () => { n += 10; } } } }).RC;
+  assert.strictEqual(W.platform.platformBack(), true);
+  assert.strictEqual(n, 11);
+  const T = load(CORE.concat(["js/platform.js"]), { globals: { PalmSystem: { platformBack: () => { throw new Error("x"); } } } }).RC;
+  assert.strictEqual(T.platform.platformBack(), false);
+});
+
+// LG's ACG guide: every documented service the app calls needs its group in appinfo.json
+// "requiredACG" (mandatory from webOS TV 27), and the app declares no group it doesn't use.
+const ACG = {
+  "com.palm.connectionmanager/getStatus": "network.query",
+  "com.webos.service.tv.systemproperty/getSystemInfo": "systemconfig.query",
+};
+// Best effort only: not covered by a documented group, must fail quietly where refused.
+const BEST_EFFORT = ["com.webos.service.connectionmanager/getinfo"];
+
+test("requiredACG: exactly the groups of the services the app calls", () => {
+  const fs = require("fs");
+  const path = require("path");
+  const appDir = path.join(__dirname, "..", "app");
+  const used = new Set();
+  const walk = (d) => {
+    for (const n of fs.readdirSync(d)) {
+      const f = path.join(d, n);
+      if (fs.statSync(f).isDirectory()) walk(f);
+      else if (/\.(js|html)$/.test(n)) {
+        for (const m of fs.readFileSync(f, "utf8").matchAll(/luna:\/\/([A-Za-z0-9.]+\/[A-Za-z0-9/]+)/g)) used.add(m[1]);
+      }
+    }
+  };
+  walk(appDir);
+  const groups = new Set();
+  for (const u of used) {
+    if (BEST_EFFORT.indexOf(u) >= 0) continue;
+    assert.ok(ACG[u], "luna://" + u + " has no documented ACG group: map it or drop the call");
+    groups.add(ACG[u]);
+  }
+  const declared = JSON.parse(fs.readFileSync(path.join(appDir, "appinfo.json"), "utf8")).requiredACG;
+  assert.ok(Array.isArray(declared), "appinfo.json has requiredACG");
+  assert.deepStrictEqual(declared.slice().sort(), Array.from(groups).sort());
+});
+
+test("platform: a refused MAC lookup leaves the rest intact", async () => {
+  const answers = {
+    "luna://com.palm.connectionmanager/getStatus": { returnValue: true,
+      wired: { state: "disconnected" }, wifi: { state: "connected", ipAddress: "192.0.2.11" } },
+    "luna://com.webos.service.connectionmanager/getinfo": { returnValue: false, errorCode: -1, errorText: "Denied method call" },
+  };
+  function PalmServiceBridge() {}
+  PalmServiceBridge.prototype.call = function (uri) {
+    const self = this;
+    setTimeout(() => self.onservicecallback(JSON.stringify(answers[uri] || { returnValue: false })), 1);
+  };
+  const R = load(CORE.concat(["js/platform.js"]), { globals: { PalmServiceBridge } }).RC;
+  eq(await R.platform.info(), { mac: "", ip: "192.0.2.11", model: "", tier: "webos" });
+  assert.strictEqual(await R.platform.currentIp(), "192.0.2.11");
 });
 
 test("platform: answers from a fake webOS bus", async () => {
   const answers = {
     "luna://com.webos.service.tv.systemproperty/getSystemInfo": { returnValue: true, modelName: "43UN7000PUB", sdkVersion: "5.6.0" },
-    "luna://com.webos.service.connectionmanager/getStatus": { returnValue: true,
+    "luna://com.palm.connectionmanager/getStatus": { returnValue: true,
       wired: { state: "connected", ipAddress: "192.0.2.10" }, wifi: { state: "disconnected" } },
     "luna://com.webos.service.connectionmanager/getinfo": { returnValue: true,
       wiredInfo: { macAddress: "a4:36:c7:00:12:ef" }, wifiInfo: { macAddress: "a4:36:c7:00:12:f0" } },

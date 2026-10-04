@@ -2,14 +2,17 @@
 // Copyright (C) 2026 NetRing Tech Services, LLC
 //
 // What the display can tell about itself, best effort, through the webOS service bus
-// (window.PalmServiceBridge). Everything here is optional: without the bus (or when a call is
-// refused or slow) the app still works and simply sends less (PROTOCOL §3.1: no MAC address →
-// the code suffix comes from the key).
+// (window.PalmServiceBridge), and leaving the app the platform's way. Everything here is
+// optional: without the bus (or when a call is refused or slow) the app still works and simply
+// sends less (PROTOCOL §3.1: no MAC address → the code suffix comes from the key).
 //
+// Only LG's documented services, each covered by a group in appinfo.json "requiredACG":
+//   IP    luna://com.palm.connectionmanager/getStatus                         network.query
+//   model luna://com.webos.service.tv.systemproperty/getSystemInfo            systemconfig.query
+//         {keys: [modelName, sdkVersion]} (fallback: PalmSystem.deviceInfo, no service call)
+// One best-effort extra, not covered by a documented group: where the display refuses it, the
+// app simply sends no MAC address (the server then can't wake the TV with wake-on-LAN):
 //   MAC   luna://com.webos.service.connectionmanager/getinfo
-//   IP    luna://com.webos.service.connectionmanager/getStatus
-//   model luna://com.webos.service.tv.systemproperty/getSystemInfo {keys: [modelName, sdkVersion]}
-//         (fallback: PalmSystem.deviceInfo)
 (function (root) {
   "use strict";
   var RC = root.RC = root.RC || {};
@@ -55,37 +58,6 @@
         finish(null);
       }
     });
-  }
-
-  // A long-lived subscription; onMessage gets every parsed answer. Returns a cancel function.
-  function subscribe(uri, params, onMessage) {
-    if (!hasBus()) return function () {};
-    var bridge;
-    try {
-      bridge = new root.PalmServiceBridge();
-      live.push(bridge);
-      bridge.onservicecallback = function (msg) {
-        var v = null;
-        try {
-          v = JSON.parse(msg);
-        } catch (e) {
-          v = null;
-        }
-        if (v && typeof v === "object") onMessage(v);
-      };
-      bridge.call(uri, JSON.stringify(params || {}));
-    } catch (e) {
-      return function () {};
-    }
-    return function () {
-      var i = live.indexOf(bridge);
-      if (i >= 0) live.splice(i, 1);
-      try {
-        bridge.cancel();
-      } catch (e) {
-        // already gone
-      }
-    };
   }
 
   function str(v, n) {
@@ -146,7 +118,7 @@
     var calls = await Promise.all([
       luna("luna://com.webos.service.tv.systemproperty/getSystemInfo",
         { keys: ["modelName", "sdkVersion", "firmwareVersion"] }, 3000),
-      luna("luna://com.webos.service.connectionmanager/getStatus", {}, 3000),
+      luna("luna://com.palm.connectionmanager/getStatus", {}, 3000),
       luna("luna://com.webos.service.connectionmanager/getinfo", {}, 3000)
     ]);
     var sys = calls[0] || {};
@@ -164,18 +136,23 @@
 
   // Just the current LAN address (for check-ins; the server uses it to reach the TV, §9).
   async function currentIp() {
-    return parseStatus(await luna("luna://com.webos.service.connectionmanager/getStatus", {}, 3000)).ip;
+    return parseStatus(await luna("luna://com.palm.connectionmanager/getStatus", {}, 3000)).ip;
   }
 
-  // Standard TVs start their screen saver when nothing "plays" for a while. Ask the TV not to,
-  // where the TV offers it; the request is refused silently on displays without this service.
-  function keepScreenOn(appId) {
-    return subscribe("luna://com.webos.service.tvpower/power/registerScreenSaverRequest",
-      { subscribe: true, clientName: appId }, function (msg) {
-        if (msg.timestamp === undefined) return;
-        luna("luna://com.webos.service.tvpower/power/responseScreenSaverRequest",
-          { clientName: appId, ack: false, timestamp: msg.timestamp }, 3000);
-      });
+  // BACK from the app's first screen: back to where the user came from (webOS hides or closes
+  // the app). The same call LG's webOSTV.js library makes; no service call, no ACG needed.
+  // false where the platform doesn't offer it (a desktop browser).
+  function platformBack() {
+    var sys = root.webOSSystem || root.PalmSystem;
+    try {
+      if (sys && typeof sys.platformBack === "function") {
+        sys.platformBack();
+        return true;
+      }
+    } catch (e) {
+      // not available
+    }
+    return false;
   }
 
   RC.platform = {
@@ -183,7 +160,7 @@
     luna: luna,
     info: info,
     currentIp: currentIp,
-    keepScreenOn: keepScreenOn,
+    platformBack: platformBack,
     parseStatus: parseStatus,
     parseMac: parseMac
   };

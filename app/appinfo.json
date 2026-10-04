@@ -10,5 +10,9 @@
   "iconColor": "#0a1a2f",
   "bgColor": "#0a1a2f",
   "resolution": "1920x1080",
-  "disableBackHistoryAPI": true
+  "disableBackHistoryAPI": true,
+  "requiredACG": [
+    "network.query",
+    "systemconfig.query"
+  ]
 }
