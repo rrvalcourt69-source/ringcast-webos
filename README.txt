@@ -9,7 +9,9 @@ assigns.
 Supported displays
   - LG webOS Signage displays ("LG Digital Signage"): installed from the server at
     https://<server>/lg/ through the display's SI Server Settings, and started at power-on
-    by the display itself (package ringcast-webos-<version>-lg-signage.ipk).
+    by the display itself (package ringcast-webos-<version>-lg-signage.ipk, or the same app
+    as ringcast-webos-<version>-lg-signage.zip, which the server serves as
+    /lg/ringcast.zip with its own address in server.json).
   - Standard LG webOS TVs (webOS 5 and later): installed from the LG app store, or in
     Developer Mode for testing (package ringcast-webos-<version>-lg-tv.ipk). The server
     brings the app back to the front when the TV is turned on or another app is opened
@@ -25,8 +27,16 @@ RingCast client for Raspberry Pi. Security notes: SECURITY.txt.
 Using it
 --------
 Remote keys: arrows to move, OK to type or select, BACK, and (optionally) the BLUE button.
+The Magic Remote pointer works too: the control under the pointer takes the focus (cyan ring)
+and OK clicks it. Colour (other than BLUE) and number keys do nothing; EXIT and HOME are
+handled by webOS.
 
-1. Server address. On first start, enter the server's address, for example
+1. Server address. A signage display installed from the server's /lg/ringcast.zip already
+   knows the server: the zip carries server.json ({"server": "https://<host>"}), and on first
+   start the app checks that address like a typed one and goes straight to the pairing code.
+   If the check fails, the address screen opens with that address and the reason. Only the
+   address is read from server.json, and a saved server always wins.
+   Otherwise, on first start, enter the server's address, for example
    https://signage.example.com (it is pre-filled with https://). Select the field and press OK
    to open the TV's keyboard; when done, go to Connect and press OK. The app checks that the
    address is a NetRing signage server before saving it, and says why when it isn't:
@@ -42,10 +52,16 @@ Remote keys: arrows to move, OK to type or select, BACK, and (optionally) the BL
    reached; the content keeps playing.
 
 Changing the server address later: press OK (or the BLUE button, on remotes that have colour
-buttons) on the pairing screen or on a "Can't reach the server" screen. BACK keeps the current
-address. A playing display ignores these keys, so a stray key press can't interrupt it: first
-remove the screen in the dashboard (or send it the unpair command), then press OK on the
-pairing screen.
+buttons, or point at the button at the bottom left) on the pairing screen or on a "Can't reach
+the server" screen. BACK keeps the current address. A playing display ignores these keys, so a
+stray key press can't interrupt it: first remove the screen in the dashboard (or send it the
+unpair command), then press OK on the pairing screen.
+
+BACK: on the address screen opened from pairing it returns to pairing. On every other screen
+it leaves the app the webOS way, keeping the pairing, except on a
+playing lg-signage display, which ignores it. On a standard TV the server brings the app back
+when TV control is connected (PROTOCOL §9). With the on-screen keyboard open, BACK only closes
+the keyboard. Everything the app draws stays inside the overscan-safe area (5% margins).
 
 Commands the app carries out (PROTOCOL §5.2): refresh (new player session), restart_player
 (reloads the app), set_orientation (acknowledged, then the player is reloaded: the server's
@@ -62,6 +78,9 @@ Standard TVs used as signage
 ----------------------------
 - Settings that switch the TV off on their own (for example "Auto Power Off" or an eco timer
   that turns the TV off after hours without a remote key) must be turned off.
+- The app no longer asks the TV to skip its screen saver (LG documents no permission for that
+  service). If a standard TV starts a screen saver over still content, use content with motion
+  (video, a clock) or turn the TV's screen saver off where the model offers it.
 - For the server to bring the app back to the front and wake the TV (PROTOCOL §9), turn on
   LG Connect Apps / TV On With Mobile, and Quick Start+ for wake-on-LAN.
 
@@ -101,19 +120,31 @@ platform, model).
 
 Building
 --------
-Requirements: Node.js 20 or newer with npm, bash, ar (binutils), tar.
+Requirements: Node.js 20 or newer with npm, bash, ar (binutils), tar, python3.
 
     npm ci                  installs the LG CLI (@webos-tools/cli) and the test tools locally
     npm test                Node tests and the webOS 5 compatibility check
-    tools/build.sh          builds both packages into dist/:
-                              dist/ringcast-webos-<version>-lg-tv.ipk
+    tools/build.sh          builds into dist/ (exactly one version; older files are removed):
+                              dist/ringcast-webos-<version>-lg-tv.ipk       (LG app store)
                               dist/ringcast-webos-<version>-lg-signage.ipk
+                              dist/ringcast-webos-<version>-lg-signage.zip  (the signage app
+                                folder, appinfo.json at the zip root, reproducible)
+                            and checks each package: id, version, platform, requiredACG, icons,
+                            splash, webOS 5 compatibility.
 
 The version is kept in one place, app/appinfo.json; build.sh copies it, and the platform of each
 package, into js/config.js. The app has no build step of its own: the files in app/ are what
 ships, and they must run on webOS 5 (Chromium 68), so no optional chaining, ??, .at(),
 replaceAll, Object.fromEntries, flatMap, CSS inset, aspect-ratio or flex gap.
 tests/check_compat.js enforces this.
+
+webOS services (appinfo.json "requiredACG", mandatory from webOS TV 27; a test keeps the list
+and the calls in step):
+  network.query        luna://com.palm.connectionmanager/getStatus (the TV's IP address)
+  systemconfig.query   luna://com.webos.service.tv.systemproperty/getSystemInfo (model, webOS)
+One best-effort extra without a documented group: com.webos.service.connectionmanager/getinfo
+(MAC address, for wake-on-LAN); where the TV refuses it the app simply sends no MAC address.
+BACK from the first screen uses webOSSystem/PalmSystem.platformBack(), no service call.
 
 Browser test (optional, needs Python 3 with Playwright and Chromium, and the cryptography
 package): python3 tests/e2e_screens.py [output-dir] loads the app from file:// against a fake
@@ -128,7 +159,9 @@ Layout
   app/js/vendor/       TweetNaCl-js (public domain), see its README.txt
   tests/               Node tests (npm test), compatibility check, browser test
   tools/build.sh       packages; tools/Install-DevTv.ps1 Developer Mode install (Windows)
-  tools/make_icons.py  draws the icons
+  tools/make_icons.py  draws the icons, the splash and the store icon (tile colour #0A1A2F)
+  docs/store/          LG Content Store submission package (texts, privacy policy, UX
+                       scenario, tester notes, self-check answers, icon, screenshots)
 
 Licence: GNU Affero General Public License v3 (see LICENSE).
 Copyright (C) 2026 NetRing Tech Services, LLC.

@@ -45,7 +45,13 @@ Network
   LG displays can't add a private CA, and the app never switches certificate checking off.
   An address that can't have a public certificate (an IP address, a .local or .lan name) is
   refused with an explanation.
-- The app talks only to the server address entered on the display, under /api/device/v1/.
+- The app talks only to its server, under /api/device/v1/: the address entered on the display
+  or, on first start of a package served by a signage server, the address in the package's
+  server.json. That file is read only while no server is saved; only its "server" value is
+  used, it must be a plain https://host[:port] address, and it is checked exactly like a typed
+  address (GET /api/device/v1/time) before it is saved. Nothing else in it (tokens, ids,
+  settings) is ever read, so a modified file can at most point a new screen at another server,
+  where it would still have to be claimed by an administrator of that server.
   It sends no cookies of its own (fetch with credentials "omit"); the server answers device
   requests with CORS for any origin and never allows credentials (PROTOCOL §1), which is safe
   because device requests are authenticated with the token or a signature, never a cookie.
@@ -79,6 +85,15 @@ frame:
   the server's origin; anything else is ignored. The error code is shown as text on the error
   panel (no_session: the display refused the player's sign-in cookie) and is used for nothing
   else.
+
+
+Platform services
+-----------------
+The app calls only these webOS services, declared in appinfo.json "requiredACG":
+network.query (com.palm.connectionmanager/getStatus, the IP address) and systemconfig.query
+(com.webos.service.tv.systemproperty/getSystemInfo, model and webOS version). The MAC address
+lookup (com.webos.service.connectionmanager/getinfo) is best effort and fails quietly where the
+TV refuses it. The app never launches other apps and never changes TV settings.
 
 
 Other rules
