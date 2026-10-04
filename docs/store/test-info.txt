@@ -1,7 +1,7 @@
 RingCast: Test Info for LG's reviewers (Seller Lounge, "Test Info")
 ====================================================================
 
-Test URL          https://mysignage.netring.net
+Test URL          https://signage.netringtech.com
 Test account      <TEST ADMIN USER NAME: fill in>
 Test password     <TEST ADMIN PASSWORD: fill in>
 UX Scenario       ux-scenario.txt (copied into LG's template)
@@ -11,21 +11,21 @@ Notes for testers (paste into "Notes for testers")
 --------------------------------------------------
 RingCast is the screen app for NetRing Signage Manager, a signage server that businesses run
 for themselves. The app needs such a server; for the review use our test server
-https://mysignage.netring.net. Adding the screen is done in the server's dashboard in a web
+https://signage.netringtech.com. Adding the screen is done in the server's dashboard in a web
 browser on a computer or phone (any modern browser), with the test account above. There is
 no account, sign-in, payment or advertising in the app itself.
 
 On the TV (remote keys in brackets):
 1. Open RingCast. The splash appears, then "Connect to your signage server" with the
    address field focused.
-2. [OK] opens the on-screen keyboard. Type mysignage.netring.net after "https://", so the
-   field reads https://mysignage.netring.net. Select "Done" on the keyboard [OK]: the
+2. [OK] opens the on-screen keyboard. Type signage.netringtech.com after "https://", so the
+   field reads https://signage.netringtech.com. Select "Done" on the keyboard [OK]: the
    keyboard closes and Connect has the focus.
    With the Magic Remote you can also point at Connect and press [OK].
 3. [OK] on Connect. After "Connecting…" the TV shows a pairing code, for example HXRT-2B99.
 
 In the browser:
-4. Open https://mysignage.netring.net and sign in with the test account.
+4. Open https://signage.netringtech.com and sign in with the test account.
 5. Choose Screens > Add Screen, type the code shown on the TV, check the details (model
    "LG ..."), give the screen a name and confirm.
 

@@ -93,7 +93,7 @@ Privacy policy    https://netringtech.com/signage/privacy  <publish privacy-poli
 What the app needs (for reviewers and for the listing)
 ------------------------------------------------------
 - A NetRing Signage Manager server (self-hosted by the organisation) with a public
-  certificate. For the review: https://mysignage.netring.net (see test-info.txt).
+  certificate. For the review: https://signage.netringtech.com (see test-info.txt).
 - An internet or LAN connection from the TV to that server.
 - Nothing else: no account in the app, no sign-in on the TV, no payments, no in-app
   purchases, no advertising, no analytics, no third-party services.
