@@ -1,7 +1,7 @@
 # RingCast device protocol: version 1 (draft 3)
 
-How a RingCast client (screen) pairs with and talks to a server. Both servers
-implement it identically: **RingCast.io** (hosted) and **NetRing Signage Manager**
+How a RingCast Player (screen) pairs with and talks to a server. Both servers
+implement it identically: **RingCast.io** (hosted) and **RingCast Manager**
 (self-hosted). This file is identical in both repositories
 (`netring-signage-manager/docs/PROTOCOL.txt`, `ringcast-client/docs/PROTOCOL.txt`,
 `ringcast-webos/docs/PROTOCOL.txt`); change it in all of them, and bump the version for any
@@ -12,6 +12,7 @@ same version.
 |---|---|---|
 | 1 | 2026-10-02 | First version (replaces `PAIRING_FLOW.txt`) |
 | 3 | 2026-10-04 | LG webOS screens: `platform` and `capabilities`, pairing without a MAC address, CORS for app-based clients, the player in an app frame and its start status message to the app (§5.3), server-side control of standard LG TVs (§9) with the TV's certificate pinned at pairing and the client key sent only to that certificate (plain port 3000 only for TVs paired over it). Pis and older servers are unaffected. |
+| 3 | 2026-10-05 | Wording only: the product names are now RingCast Manager (self-hosted server) and RingCast Player (screen software). Nothing on the wire changed; `server_name` was always free text. |
 | 2 | 2026-10-02 | Security review fixes (two review rounds): signed pairing request, token issued at first signed poll and stored only as a hash, key-signed token renewal/recovery, two-step claim with mandatory MAC suffix and longer cloud codes, name-constrained private CA for self-hosted servers, signed client updates, command delivery rules, token and key moved to `/var/lib/ringcast`, separate web-engine user |
 
 ---
@@ -124,7 +125,7 @@ they don't own.
   "code": "HXRT-2B99",
   "expires_in_s": 900,
   "poll_interval_s": 4,
-  "server_name": "NetRing Signage Manager",
+  "server_name": "RingCast Manager",
   "add_screen_hint": "Screens → Add Screen",
   "protocol": { "min": 1, "max": 1 } }
 ```

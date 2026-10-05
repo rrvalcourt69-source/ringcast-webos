@@ -1,10 +1,10 @@
 {
   "id": "com.netringtech.ringcast",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "vendor": "NetRing Tech Services",
   "type": "web",
   "main": "index.html",
-  "title": "RingCast",
+  "title": "RingCast Player",
   "icon": "icon.png",
   "largeIcon": "largeIcon.png",
   "splashBackground": "splash.png",

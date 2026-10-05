@@ -107,7 +107,7 @@ test("pairing: signed request with platform, capabilities, model; code from the 
   const fp = crypto.createHash("sha256").update(raw).digest("hex");
   const shown = e.uiCalls("code")[0].v;
   assert.strictEqual(shown.code.split("-")[1], fp.slice(0, 4).toUpperCase());
-  assert.strictEqual(shown.serverName, "NetRing Signage Manager");
+  assert.strictEqual(shown.serverName, "RingCast Manager");
   assert.strictEqual(shown.hint, "Screens → Add Screen");
   const r = e.server.requests.find((x) => x.path === PATH + "pair/request");
   assert.strictEqual(r.headers["X-RingCast-Key-Id"], fp);

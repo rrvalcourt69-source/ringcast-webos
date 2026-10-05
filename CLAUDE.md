@@ -1,4 +1,4 @@
-# RingCast for LG webOS: instructions for Claude
+# RingCast Player for LG webOS: instructions for Claude
 
 Screen app for RingCast signage on LG webOS displays. Owner: Rick Valcourt, NetRing Tech
 Services, LLC. Licence: **AGPL-3.0**. Private now, **public** at launch: write as if public.
@@ -23,6 +23,18 @@ Services, LLC. Licence: **AGPL-3.0**. Private now, **public** at launch: write a
 7. Server-provided text is shown as text, never executed; the app only opens the server's own
    player page.
 8. Commits: one logical change each, with a "why" message. Work on branches and open PRs.
+
+## Product names (decided 2026-10-05)
+
+- **RingCast Signage** is the product family, presented as **"RingCast by NetRing"**.
+- **RingCast Manager**: the self-hosted server and its dashboard (formerly "NetRing Signage Manager").
+- **RingCast Player**: the software on screens: Raspberry Pi and LG webOS (formerly "RingCast client").
+  The LG app tile and store listing say "RingCast Player"; the Pi installer is the "RingCast Player installer".
+- Only names people see change (UI, installer screens, guides, release titles and notes, website).
+  Technical identifiers stay as they are so installed servers and screens keep updating:
+  repo names, `/opt/netring-signage`, service and user names, `netring-signage-manager-X.Y.Z.run`,
+  `ringcast-client-X.Y.Z.tar.gz`, `ringcast-pi-installer-X.Y.Z.zip`, `Install-PiClient.ps1`,
+  LG app id `com.netringtech.ringcast`, signing namespaces.
 
 ## Publication rules (decided 2026-10-02)
 
@@ -54,5 +66,5 @@ renewal, LG testing) are in the claude.ai project doc `claude/netring-signage-ru
 
 ## Releasing
 
-The LG app ships inside the NetRing Signage Manager release (the server publishes it at `/lg/`).
+The LG app ships inside the RingCast Manager release (the server publishes it at `/lg/`).
 Use the **netring-signage-release** skill / `docs/RELEASING.txt` in netring-signage-manager.

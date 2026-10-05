@@ -280,7 +280,7 @@
     var code = this.$("code");
     code.textContent = o.code;
     code.className = o.code.length > 9 ? "code long" : "code";
-    this.setText("code-enter", RC.t("pair_enter", { server: o.serverName || "NetRing Signage Manager" }));
+    this.setText("code-enter", RC.t("pair_enter", { server: o.serverName || "RingCast Manager" }));
     this.setText("code-hint", o.hint);
     this.$("code-hint").hidden = !o.hint;
     this.setText("code-server", RC.t("pair_server", { host: o.host }));

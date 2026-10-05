@@ -1,14 +1,14 @@
-RingCast: UX scenario (content for LG's UX Scenario template)
+RingCast Player: UX scenario (content for LG's UX Scenario template)
 =============================================================
 
-App: RingCast (com.netringtech.ringcast) 0.2.0, standard LG webOS TVs, webOS 5 and later
+App: RingCast Player (com.netringtech.ringcast) 0.2.1, standard LG webOS TVs, webOS 5 and later
 Resolution: 1920x1080. Languages: English (default), Spanish (follows the TV's language).
 Copy each section into the matching part of LG's template.
 
 
 1. App overview
 ---------------
-RingCast turns the TV into a digital signage screen for NetRing Signage Manager, a signage
+RingCast Player turns the TV into a digital signage screen for RingCast Manager, a signage
 server an organisation runs for itself. The app has four kinds of screens: the server address,
 the pairing code, a short "Screen added" notice, and the content player (full screen). Setup
 is done once; afterwards the app only plays. There are no menus, lists, accounts or settings
@@ -79,7 +79,7 @@ S3 Connecting
   and shows S2 or S5 with the reason.
 
 S4 Pairing code
-  A large code such as HXRT-2B99 and "Enter this code in NetRing Signage Manager,
+  A large code such as HXRT-2B99 and "Enter this code in RingCast Manager,
   Screens → Add Screen". A new code appears by itself when one expires. The button at the
   bottom left (focused) changes the server address.
 
@@ -101,12 +101,12 @@ S7 Playing
 ----------------------------------
 S7 is the app's main screen once set up, and it has no previous screen, so BACK leaves the
 app the webOS way (the TV shows what it showed before, or the home screen). The pairing is
-kept: opening RingCast again plays at once.
+kept: opening RingCast Player again plays at once.
 
-On a TV used as signage, the organisation's server can bring RingCast back to the front: when
+On a TV used as signage, the organisation's server can bring RingCast Player back to the front: when
 an administrator has connected "TV control" for that screen in the server's dashboard (it
-uses LG Connect Apps on the TV), the server reopens RingCast within about 10 seconds whenever
-another app or input is in front. Without that connection (as on a test TV) RingCast stays in
+uses LG Connect Apps on the TV), the server reopens RingCast Player within about 10 seconds whenever
+another app or input is in front. Without that connection (as on a test TV) RingCast Player stays in
 the background until it is opened again. This is the organisation's choice, made on its
 server; the app itself never starts on its own.
 

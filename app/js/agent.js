@@ -3,7 +3,7 @@
 //
 // The screen's behaviour (docs/PROTOCOL.txt): server address check, pairing (§3), device token
 // (§4), check-in and commands (§5.1, §5.2) and the player session shown in a frame (§5.3).
-// It matches the RingCast client for Raspberry Pi: same signatures, error handling, backoff,
+// It matches the RingCast Player for Raspberry Pi: same signatures, error handling, backoff,
 // the 60 s "Claimed by" notice before the token is saved, and "post the result, then act".
 //
 // No DOM access: the screens are drawn by the `ui` object it is given (ui.js), and time,

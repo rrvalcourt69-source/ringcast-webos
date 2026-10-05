@@ -10,10 +10,10 @@
 
   var STRINGS = {
     en: {
-      app_name: "RingCast",
+      app_name: "RingCast Player",
       // address screen
       addr_title: "Connect to your signage server",
-      addr_intro: "Enter the address of your NetRing Signage Manager server.",
+      addr_intro: "Enter the address of your RingCast Manager server.",
       addr_cert: "LG displays need a server with a public certificate (for example from Let's Encrypt).",
       addr_label: "Server address",
       addr_example: "Example: https://signage.example.com",
@@ -70,14 +70,14 @@
       frame_no_session_hint: "The display refused the player's sign-in cookie inside the app, so the player can't show content. Please report this message with the line below.",
       frame_footer: "Server: {host} · {diag}",
       // diagnostics
-      diag: "RingCast {version} · {platform} · {model}",
-      diag_ip: "RingCast {version} · {platform} · {model} · IP {ip}",
+      diag: "RingCast Player {version} · {platform} · {model}",
+      diag_ip: "RingCast Player {version} · {platform} · {model} · IP {ip}",
       model_unknown: "LG webOS display"
     },
     es: {
-      app_name: "RingCast",
+      app_name: "RingCast Player",
       addr_title: "Conectar con su servidor de señalización",
-      addr_intro: "Introduzca la dirección de su servidor NetRing Signage Manager.",
+      addr_intro: "Introduzca la dirección de su servidor RingCast Manager.",
       addr_cert: "Las pantallas LG necesitan un servidor con un certificado público (por ejemplo de Let's Encrypt).",
       addr_label: "Dirección del servidor",
       addr_example: "Ejemplo: https://signage.example.com",
@@ -129,8 +129,8 @@
       frame_cookie_hint: "Puede que la pantalla no conserve la cookie del reproductor dentro de la aplicación (vea PROTOCOL §5.3). Por favor, comunique este mensaje.",
       frame_no_session_hint: "La pantalla rechazó la cookie de inicio de sesión del reproductor dentro de la aplicación, así que el reproductor no puede mostrar contenido. Por favor, comunique este mensaje junto con la línea de abajo.",
       frame_footer: "Servidor: {host} · {diag}",
-      diag: "RingCast {version} · {platform} · {model}",
-      diag_ip: "RingCast {version} · {platform} · {model} · IP {ip}",
+      diag: "RingCast Player {version} · {platform} · {model}",
+      diag_ip: "RingCast Player {version} · {platform} · {model} · IP {ip}",
       model_unknown: "Pantalla LG webOS"
     }
   };

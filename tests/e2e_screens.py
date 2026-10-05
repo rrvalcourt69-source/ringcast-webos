@@ -58,7 +58,7 @@ h1{position:absolute;left:120px;top:230px;margin:0;font-size:150px;line-height:1
 p{position:absolute;left:120px;top:590px;margin:0;font-size:56px;color:#d8e4f2;width:1300px}
 .clock{position:absolute;right:120px;bottom:100px;font-size:120px;font-weight:700;color:#7fd8ff}
 </style></head><body><div class="k">Sample content</div><h1>Welcome to<br>the lobby</h1>
-<p>Messages, menus and schedules from your NetRing Signage Manager server, played full screen.</p>
+<p>Messages, menus and schedules from your RingCast Manager server, played full screen.</p>
 <div class="clock" id="c"></div><script>
 function t(){var d=new Date();document.getElementById("c").textContent=("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);}
 t();setInterval(t,1000);
@@ -201,7 +201,7 @@ class Handler(BaseHTTPRequestHandler):
             code = "HXRT-" + fp[:4].upper()
             S.pairings[pid] = {"raw": raw, "code": code, "status": "waiting", "request": b}
             return self.send(201, {"pairing_id": pid, "code": code, "expires_in_s": 900, "poll_interval_s": 3,
-                                   "server_name": "NetRing Signage Manager", "add_screen_hint": "Screens → Add Screen",
+                                   "server_name": "RingCast Manager", "add_screen_hint": "Screens → Add Screen",
                                    "protocol": {"min": 1, "max": 1}})
         if path == "/api/device/v1/pair/status":
             p = S.pairings.get(b.get("pairing_id"))

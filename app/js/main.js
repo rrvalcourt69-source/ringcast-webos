@@ -75,7 +75,7 @@
     ui.init(agent);
     RC.app = { agent: agent, ui: ui };
     agent.start();
-    log("RingCast " + RC.config.version + " (" + RC.config.platform + ") started");
+    log("RingCast Player " + RC.config.version + " (" + RC.config.platform + ") started");
   }
 
   if (root.document.readyState === "loading") root.document.addEventListener("DOMContentLoaded", start);

@@ -1,7 +1,7 @@
-RingCast: LG Content Store submission package
+RingCast Player: LG Content Store submission package
 =============================================
 
-Everything needed to submit RingCast for standard LG TVs to the LG Content Store through
+Everything needed to submit RingCast Player for standard LG TVs to the LG Content Store through
 the LG Seller Lounge. The package to upload is dist/ringcast-webos-<version>-lg-tv.ipk from
 tools/build.sh (the lg-signage packages are for LG webOS Signage displays and are served by
 the signage server, not the store).

@@ -1,7 +1,7 @@
-RingCast: UK data disclosure answers (Seller Lounge)
+RingCast Player: UK data disclosure answers (Seller Lounge)
 ===================================================
 
-App: RingCast (com.netringtech.ringcast) 0.2.0
+App: RingCast Player (com.netringtech.ringcast) 0.2.1
 Privacy policy URL: https://netringtech.com/signage/privacy  <confirm, publish privacy-policy.txt there first>
 
 

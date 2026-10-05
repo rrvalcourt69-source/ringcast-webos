@@ -1,8 +1,8 @@
-RingCast for LG webOS
+RingCast Player for LG webOS
 =====================
 
-The RingCast screen app for LG displays. It turns an LG webOS display into a signage screen
-for NetRing Signage Manager: on first start it asks for the server's address, shows a pairing
+The RingCast Player screen app for LG displays. It turns an LG webOS display into a signage screen
+for RingCast Manager: on first start it asks for the server's address, shows a pairing
 code, and once an administrator adds the screen in the dashboard it plays whatever the server
 assigns.
 
@@ -20,8 +20,8 @@ Supported displays
 The server must use a certificate from a public certificate authority (for example
 Let's Encrypt): LG displays don't accept a private one.
 
-The device protocol is docs/PROTOCOL.txt, shared with NetRing Signage Manager and the
-RingCast client for Raspberry Pi. Security notes: SECURITY.txt.
+The device protocol is docs/PROTOCOL.txt, shared with RingCast Manager and the
+RingCast Player for Raspberry Pi. Security notes: SECURITY.txt.
 
 
 Using it

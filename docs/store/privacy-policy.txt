@@ -1,4 +1,4 @@
-RingCast for LG webOS: privacy policy
+RingCast Player for LG webOS: privacy policy
 =====================================
 
 To be published at: https://netringtech.com/signage/privacy  <confirm the address before
@@ -8,7 +8,7 @@ Last updated: <date of publication>
 Publisher: NetRing Tech Services, LLC, Smithfield, Rhode Island, USA.
 Contact: <SUPPORT E-MAIL: confirm>
 
-RingCast is an app that turns an LG TV or LG signage display into a screen for NetRing
+RingCast Player is an app that turns an LG TV or LG signage display into a screen for NetRing
 Signage Manager, a signage server that an organisation runs for itself. This policy explains
 what the app stores and sends.
 

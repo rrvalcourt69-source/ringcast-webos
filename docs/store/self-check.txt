@@ -1,18 +1,18 @@
-RingCast: self-check list answers (LG self-check list v5.0)
+RingCast Player: self-check list answers (LG self-check list v5.0)
 ==========================================================
 
-App: RingCast (com.netringtech.ringcast) 0.2.0, package ringcast-webos-0.2.0-lg-tv.ipk.
+App: RingCast Player (com.netringtech.ringcast) 0.2.1, package ringcast-webos-0.2.1-lg-tv.ipk.
 The items below follow the topics of LG's self-check list; enter each answer against the
 matching item number in LG's sheet. "Verified" says how it was checked: (T) on the owner's
 LG 43UN7000PUB, webOS 5.6; (A) automated tests in this repository (npm test, the browser test
-tests/e2e_screens.py, tools/build.sh checks); (R) to re-check on the TV with 0.2.0 before
+tests/e2e_screens.py, tools/build.sh checks); (R) to re-check on the TV with 0.2.1 before
 submitting.
 
 
 Package and metadata
 --------------------
 Item                                        Answer  Reason / verified
-App ID, version, vendor in appinfo.json     Pass    com.netringtech.ringcast 0.2.0 (A)
+App ID, version, vendor in appinfo.json     Pass    com.netringtech.ringcast 0.2.1 (A)
 requiredACG declared                        Pass    network.query, systemconfig.query; every
                                                     service call maps to one of them (A)
 Icon >= 400x400, background = tile colour   Pass    icon-400.png, #0A1A2F full bleed; app icons

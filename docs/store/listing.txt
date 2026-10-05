@@ -1,9 +1,9 @@
-RingCast: LG Content Store listing (Seller Lounge, "Service Info" and "App Info")
+RingCast Player: LG Content Store listing (Seller Lounge, "Service Info" and "App Info")
 ================================================================================
 
 App ID           com.netringtech.ringcast
-Version          0.2.0
-Package          ringcast-webos-0.2.0-lg-tv.ipk (the lg-signage packages are not for the store)
+Version          0.2.1
+Package          ringcast-webos-0.2.1-lg-tv.ipk (the lg-signage packages are not for the store)
 Default language English; Spanish also shipped (the app follows the TV's language)
 App Tile Color   #0A1A2F (dark navy). The icon (icon-400.png) and the app's own icons fill
                  their square with this colour, so the tile and the icon match.
@@ -12,21 +12,21 @@ Resolution       1920x1080
 
 Title
 -----
-EN  RingCast
-ES  RingCast
+EN  RingCast Player
+ES  RingCast Player
 
 
 Short description (one line)
 ----------------------------
-EN  Turn this TV into a digital signage screen for your NetRing Signage Manager server.
-ES  Convierta este televisor en una pantalla de señalización digital para su servidor NetRing
-    Signage Manager.
+EN  Turn this TV into a digital signage screen for your RingCast Manager server.
+ES  Convierta este televisor en una pantalla de señalización digital para su servidor RingCast
+    Manager.
 
 
 Long description
 ----------------
 EN
-RingCast turns an LG TV into a digital signage screen managed from NetRing Signage Manager,
+RingCast Player turns an LG TV into a digital signage screen managed from RingCast Manager,
 a self-hosted signage server for businesses: lobby screens, menu boards, notices and
 schedules.
 
@@ -38,8 +38,8 @@ How it works:
 3. The TV plays whatever the server assigns to it, full screen, and keeps playing if the
    network drops for a while.
 
-Requirements: a NetRing Signage Manager server reachable from the TV, with a certificate
-from a public certificate authority. RingCast does not include content or a server of its
+Requirements: a RingCast Manager server reachable from the TV, with a certificate
+from a public certificate authority. RingCast Player does not include content or a server of its
 own and is not useful without one.
 
 No accounts, payments or advertising in the app. The app collects no personal data: it
@@ -47,8 +47,8 @@ stores its pairing with the server on the TV and sends technical details of the 
 software version, network address) only to the server you enter.
 
 ES
-RingCast convierte un televisor LG en una pantalla de señalización digital gestionada desde
-NetRing Signage Manager, un servidor de señalización autoalojado para empresas: pantallas de
+RingCast Player convierte un televisor LG en una pantalla de señalización digital gestionada desde
+RingCast Manager, un servidor de señalización autoalojado para empresas: pantallas de
 recepción, cartas de menú, avisos y horarios.
 
 Cómo funciona:
@@ -59,8 +59,8 @@ Cómo funciona:
 3. El televisor reproduce a pantalla completa lo que el servidor le asigna, y sigue
    reproduciendo aunque la red se corte un rato.
 
-Requisitos: un servidor NetRing Signage Manager accesible desde el televisor, con un
-certificado de una autoridad de certificación pública. RingCast no incluye contenido ni un
+Requisitos: un servidor RingCast Manager accesible desde el televisor, con un
+certificado de una autoridad de certificación pública. RingCast Player no incluye contenido ni un
 servidor propio y no es útil sin uno.
 
 La aplicación no tiene cuentas, pagos ni publicidad. No recoge datos personales: guarda en el
@@ -77,7 +77,7 @@ countries, prefer that one.
 Tag keywords
 ------------
 digital signage, signage, display, screen, kiosk, menu board, lobby, notice board, business,
-NetRing, RingCast
+NetRing, RingCast, RingCast Player
 
 ES: señalización digital, cartelería digital, pantalla, quiosco, menú, recepción, avisos
 
@@ -92,7 +92,7 @@ Privacy policy    https://netringtech.com/signage/privacy  <publish privacy-poli
 
 What the app needs (for reviewers and for the listing)
 ------------------------------------------------------
-- A NetRing Signage Manager server (self-hosted by the organisation) with a public
+- A RingCast Manager server (self-hosted by the organisation) with a public
   certificate. For the review: https://signage.netringtech.com (see test-info.txt).
 - An internet or LAN connection from the TV to that server.
 - Nothing else: no account in the app, no sign-in on the TV, no payments, no in-app

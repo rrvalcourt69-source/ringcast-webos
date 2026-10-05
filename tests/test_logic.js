@@ -23,10 +23,10 @@ test("pairing codes: 4 letters (self-hosted) or 6 (cloud), dash, 4 upper-case he
 
 test("pairing response: ids checked, numbers clamped, strings clipped", () => {
   const base = { pairing_id: "q3V0abcdefghijklmnopqr", code: "HXRT-2B99", expires_in_s: 900, poll_interval_s: 4,
-    server_name: "NetRing Signage Manager", add_screen_hint: "Screens → Add Screen" };
+    server_name: "RingCast Manager", add_screen_hint: "Screens → Add Screen" };
   const p = C.parsePairResponse(base);
   eq(p, { pairingId: base.pairing_id, code: "HXRT-2B99", pollIntervalS: 4, expiresInS: 900,
-    serverName: "NetRing Signage Manager", hint: "Screens → Add Screen" });
+    serverName: "RingCast Manager", hint: "Screens → Add Screen" });
   assert.strictEqual(C.parsePairResponse(Object.assign({}, base, { poll_interval_s: 0.5 })).pollIntervalS, 3);
   assert.strictEqual(C.parsePairResponse(Object.assign({}, base, { poll_interval_s: 999 })).pollIntervalS, 30);
   assert.strictEqual(C.parsePairResponse(Object.assign({}, base, { poll_interval_s: "4" })).pollIntervalS, 4);

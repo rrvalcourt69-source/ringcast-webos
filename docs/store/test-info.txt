@@ -1,4 +1,4 @@
-RingCast: Test Info for LG's reviewers (Seller Lounge, "Test Info")
+RingCast Player: Test Info for LG's reviewers (Seller Lounge, "Test Info")
 ====================================================================
 
 Test URL          https://signage.netringtech.com
@@ -9,14 +9,14 @@ UX Scenario       ux-scenario.txt (copied into LG's template)
 
 Notes for testers (paste into "Notes for testers")
 --------------------------------------------------
-RingCast is the screen app for NetRing Signage Manager, a signage server that businesses run
+RingCast Player is the screen app for RingCast Manager, a signage server that businesses run
 for themselves. The app needs such a server; for the review use our test server
 https://signage.netringtech.com. Adding the screen is done in the server's dashboard in a web
 browser on a computer or phone (any modern browser), with the test account above. There is
 no account, sign-in, payment or advertising in the app itself.
 
 On the TV (remote keys in brackets):
-1. Open RingCast. The splash appears, then "Connect to your signage server" with the
+1. Open RingCast Player. The splash appears, then "Connect to your signage server" with the
    address field focused.
 2. [OK] opens the on-screen keyboard. Type signage.netringtech.com after "https://", so the
    field reads https://signage.netringtech.com. Select "Done" on the keyboard [OK]: the
@@ -35,14 +35,14 @@ On the TV:
 
 Things to try:
 - [BACK] while playing leaves the app (webOS shows the previous app or the home screen).
-  Opening RingCast again plays at once, without setup. On a test TV nothing brings it back
+  Opening RingCast Player again plays at once, without setup. On a test TV nothing brings it back
   automatically; on a signage installation the organisation's server can (see the UX
   scenario, section 5).
 - [BACK] on the address screen at first launch leaves the app.
 - On the pairing code screen, [OK] or [BLUE] (or pointing at the button at the bottom left and
   pressing [OK]) opens the address screen with the current server; [BACK] returns to the code.
 - [EXIT] closes the app; [HOME] opens the home screen. Colour and number keys do nothing.
-- Turn the TV off and on, or unplug it: RingCast keeps its setup and plays again when opened.
+- Turn the TV off and on, or unplug it: RingCast Player keeps its setup and plays again when opened.
 - Disconnect the network while playing: the content keeps playing with a small "Offline"
   marker; reconnect and the marker goes away.
 - A wrong address (for example http://example.com or 192.0.2.10) is refused with the reason.

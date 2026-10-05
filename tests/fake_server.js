@@ -130,7 +130,7 @@ class FakeServer {
       expiresAt: this.now() + this.expires * 1000 };
     this.ev("pair_request", { code: letters + "-" + suffix, body: b });
     return this.json(201, { pairing_id: pid, code: letters + "-" + suffix, expires_in_s: this.expires,
-      poll_interval_s: this.pollInterval, server_name: "NetRing Signage Manager",
+      poll_interval_s: this.pollInterval, server_name: "RingCast Manager",
       add_screen_hint: "Screens → Add Screen", protocol: { min: 1, max: 1 } });
   }
 
