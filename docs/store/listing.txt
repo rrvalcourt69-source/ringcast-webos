@@ -2,8 +2,8 @@ RingCast Player: LG Content Store listing (Seller Lounge, "Service Info" and "Ap
 ================================================================================
 
 App ID           com.netringtech.ringcast
-Version          0.2.2
-Package          ringcast-webos-0.2.2-lg-tv.ipk (the lg-signage packages are not for the store)
+Version          1.0.0
+Package          ringcast-webos-1.0.0-lg-tv.ipk (the lg-signage packages are not for the store)
 Default language English; Spanish also shipped (the app follows the TV's language)
 App Tile Color   #0A101A (near-black navy, as in the NetRing artwork). The icon (icon-400.png)
                  and the app's own icons fill their square with this colour, so the tile and

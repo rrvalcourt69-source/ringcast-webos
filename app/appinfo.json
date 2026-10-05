@@ -1,6 +1,6 @@
 {
   "id": "com.netringtech.ringcast",
-  "version": "0.2.2",
+  "version": "1.0.0",
   "vendor": "NetRing Tech Services",
   "type": "web",
   "main": "index.html",
