@@ -11,7 +11,7 @@ same version.
 | Draft | Date | Change |
 |---|---|---|
 | 1 | 2026-10-02 | First version (replaces `PAIRING_FLOW.txt`) |
-| 3 | 2026-10-04 | LG webOS screens: `platform` and `capabilities`, pairing without a MAC address, CORS for app-based clients, the player in an app frame and its start status message to the app (§5.3), server-side control of standard LG TVs (§9). Pis and older servers are unaffected. |
+| 3 | 2026-10-04 | LG webOS screens: `platform` and `capabilities`, pairing without a MAC address, CORS for app-based clients, the player in an app frame and its start status message to the app (§5.3), server-side control of standard LG TVs (§9) with the TV's certificate pinned at pairing and the client key sent only to that certificate (plain port 3000 only for TVs paired over it). Pis and older servers are unaffected. |
 | 2 | 2026-10-02 | Security review fixes (two review rounds): signed pairing request, token issued at first signed poll and stored only as a hash, key-signed token renewal/recovery, two-step claim with mandatory MAC suffix and longer cloud codes, name-constrained private CA for self-hosted servers, signed client updates, command delivery rules, token and key moved to `/var/lib/ringcast`, separate web-engine user |
 
 ---
@@ -379,6 +379,18 @@ therefore uses the TV's local control service, the one phone remote apps use:
 - **Pairing:** an administrator clicks **Connect TV control** on the screen; the TV shows an
   "allow" prompt once and returns a client key, which the server stores encrypted with its other
   secrets. Removing the screen deletes the key.
+- **Certificate pinning:** at pairing the server records the SHA-256 fingerprint of the
+  certificate the TV presents on port 3001, the port that worked and the address. Afterwards it
+  sends the client key only to a TLS endpoint presenting that same certificate, checked before
+  anything is sent; on a mismatch it sends nothing, stops, and shows "The TV's identity changed;
+  click Connect TV control again". A new address reported at check-in is used only if the pinned
+  certificate answers there. A TV paired over plain port 3000 (no certificate to check) is only
+  ever contacted on port 3000, at the address it was paired at or one an administrator enters,
+  and the dashboard warns that the connection is unencrypted; a TLS-paired TV never falls back to
+  port 3000. Connect TV control offers the stored key only to the TV it belongs to (otherwise the
+  TV prompts again) and records a new pin; **Forget TV** deletes the key and the pin. Pairings
+  made before pinning existed are pinned on their first successful connection (trust on first
+  use, logged).
 - **Keeping signage in front:** about every 10 seconds, when the TV reports power state `Active`
   and the app in front (`com.webos.applicationManager/getForegroundAppInfo`) is not the RingCast
   app, the server launches it (`system.launcher/launch`). Per screen: **Always** (default) or
