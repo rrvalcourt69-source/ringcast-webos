@@ -51,4 +51,4 @@ To test again from the start: in the dashboard, Screens, the screen's Commands m
 screen. The TV shows a new pairing code by itself.
 
 The test server is kept online during the review. If it can't be reached, please contact
-<SUPPORT E-MAIL: confirm>.
+support@netringtech.com.

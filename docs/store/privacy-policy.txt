@@ -6,7 +6,7 @@ entering it in the Seller Lounge>
 Last updated: <date of publication>
 
 Publisher: NetRing Tech Services, LLC, Smithfield, Rhode Island, USA.
-Contact: <SUPPORT E-MAIL: confirm>
+Contact: support@netringtech.com
 
 RingCast Player is an app that turns an LG TV or LG signage display into a screen for NetRing
 Signage Manager, a signage server that an organisation runs for itself. This policy explains
@@ -77,7 +77,7 @@ The app is a tool for businesses and organisations and is not directed at childr
   the app from the TV.
 - Questions about the content a screen shows, or about data held on a signage server, go to
   the organisation that runs that server.
-- Questions about the app itself: <SUPPORT E-MAIL: confirm>.
+- Questions about the app itself: support@netringtech.com.
 
 
 8. Changes

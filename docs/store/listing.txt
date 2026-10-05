@@ -86,7 +86,7 @@ ES: señalización digital, cartelería digital, pantalla, quiosco, menú, recep
 Seller and contact (fill in, then delete this line)
 ---------------------------------------------------
 Seller            NetRing Tech Services, LLC
-Support e-mail    <SUPPORT E-MAIL: confirm, for example support@netringtech.com>
+Support e-mail    support@netringtech.com
 Website           https://netringtech.com/signage  <confirm the page exists>
 Privacy policy    https://netringtech.com/signage/privacy  <publish privacy-policy.txt there first>
 

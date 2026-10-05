@@ -1,0 +1,23 @@
+RingCast Player 1.0.0, first release. It is the screen app for RingCast Manager, a signage server a business runs for itself. For the review use our test server https://signage.netringtech.com with the test account below. No account, payment or ads in the app itself.
+
+On the TV:
+1. Open RingCast Player. After the splash, "Connect to your signage server" appears with the address field focused.
+2. OK opens the keyboard. Make the field read https://signage.netringtech.com, then Done.
+3. OK on Connect. The TV shows a pairing code, e.g. HXRT-2B99.
+
+In a browser on a PC or phone:
+4. Open https://signage.netringtech.com and sign in with the test account.
+5. Screens > Add Screen, type the code from the TV, name the screen, confirm.
+
+On the TV:
+6. "Screen added" appears; after a 60 s countdown the sample content plays full screen.
+
+Things to try:
+- BACK while playing leaves the app; opening it again plays at once without setup.
+- On the pairing code screen, OK or BLUE opens the address screen; BACK returns to the code.
+- Power off/on: setup is kept and playing resumes when opened.
+- Network unplugged while playing: content keeps playing with an "Offline" marker.
+- A wrong address (e.g. http://example.com) is refused with the reason.
+To start over: dashboard, Screens, the screen's Commands menu > Remove screen; the TV shows a new code.
+
+The UX scenario PDF lists every screen and key. Questions: support@netringtech.com
