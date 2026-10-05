@@ -159,7 +159,7 @@ Layout
   app/js/vendor/       TweetNaCl-js (public domain), see its README.txt
   tests/               Node tests (npm test), compatibility check, browser test
   tools/build.sh       packages; tools/Install-DevTv.ps1 Developer Mode install (Windows)
-  tools/make_icons.py  draws the icons, the splash and the store icon (tile colour #0A1A2F)
+  tools/make_icons.py  draws the icons, the splash and the store icon (tile colour #0A101A)
   docs/store/          LG Content Store submission package (texts, privacy policy, UX
                        scenario, tester notes, self-check answers, icon, screenshots)
 

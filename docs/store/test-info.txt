@@ -45,7 +45,7 @@ Things to try:
 - Turn the TV off and on, or unplug it: RingCast Player keeps its setup and plays again when opened.
 - Disconnect the network while playing: the content keeps playing with a small "Offline"
   marker; reconnect and the marker goes away.
-- A wrong address (for example http://example.com or 192.0.2.10) is refused with the reason.
+- A wrong address (for example http://example.com or 192.0.2.20) is refused with the reason.
 
 To test again from the start: in the dashboard, Screens, the screen's Commands menu > Remove
 screen. The TV shows a new pairing code by itself.

@@ -1,87 +1,131 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-only
 # Copyright (C) 2026 NetRing Tech Services, LLC
-"""Draws the app's artwork with Pillow (original artwork, no third-party images):
+"""Draws the RingCast Player artwork from the logo (docs/brand/ringcast-player-logo.svg):
 
-    app/icon.png            80x80     app icon (appinfo.json "icon")
-    app/largeIcon.png       130x130   large app icon (appinfo.json "largeIcon")
-    app/splash.png          1920x1080 splash background (appinfo.json "splashBackground")
-    docs/store/icon-400.png 400x400   app icon for the LG Seller Lounge
+    app/icon.png                     80x80     app icon (appinfo.json "icon")
+    app/largeIcon.png                130x130   large app icon (appinfo.json "largeIcon")
+    app/splash.png                   1920x1080 splash background (appinfo.json "splashBackground")
+    docs/store/icon-400.png          400x400   app icon for the LG Seller Lounge
+    docs/store/splash-1920x1080.png  1920x1080 the splash, for the store package
 
-The mark: a cyan ring with a light dot and two short arcs cast from it, on a full-bleed square
-of the tile colour TILE (the same colour as appinfo.json "iconColor"/"bgColor" and the "App Tile
-Color" chosen in the Seller Lounge), so the icon blends into its tile on every webOS version.
-The splash is the tile colour with a soft lighter centre (never black), the mark and the name.
+The app's mark: the ring and nodes of NetRing's N logo around a faceted metal "R" whose bowl is a
+play button. The splash also carries the N logo itself next to "by NetRing". Icons are full bleed on TILE, the colour of appinfo.json "iconColor"/"bgColor" and the
+Seller Lounge "App Tile Color", so they blend into the tile on every webOS version.
 
-Run again only to change the design: python3 tools/make_icons.py
+Needs cairosvg (pip) and Pillow. Run again only to change the design: python3 tools/make_icons.py
 """
+import io
+import math
 from pathlib import Path
 
+import cairosvg
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
 APP = ROOT / "app"
 STORE = ROOT / "docs" / "store"
-TILE = "#0A1A2F"
-NAVY, CYAN, SOFT = (10, 26, 47, 255), (0, 198, 255, 255), (230, 238, 248, 255)
+BRAND = ROOT / "docs" / "brand"
+TILE = "#0A101A"
 FONTS = ["/usr/share/fonts/opentype/inter/Inter-SemiBold.otf",
          "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"]
+FONTS_REG = ["/usr/share/fonts/opentype/inter/Inter-Regular.otf",
+             "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"]
+
+DEFS = """<defs>
+<linearGradient id="teal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12909B"/><stop offset="1" stop-color="#0B6F79"/></linearGradient>
+<linearGradient id="nteal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0A6670"/><stop offset="1" stop-color="#08545C"/></linearGradient>
+<linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8A8F96"/><stop offset=".55" stop-color="#5E636B"/><stop offset="1" stop-color="#454A52"/></linearGradient>
+<linearGradient id="nmetal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#606368"/><stop offset="1" stop-color="#474B52"/></linearGradient>
+<linearGradient id="metal2" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7C8189"/><stop offset="1" stop-color="#4C5159"/></linearGradient>
+<linearGradient id="nmetal2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5A5E64"/><stop offset="1" stop-color="#454950"/></linearGradient>
+<pattern id="grid" width="15" height="15" patternUnits="userSpaceOnUse"><path d="M15 0H0V15" fill="none" stroke="#0F1822" stroke-width="1"/></pattern>
+<pattern id="pgrid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#0F1A26" stroke-width="2"/></pattern>
+</defs>"""
 
 
-def mark(d, x0, y0, s):
-    """The ring and its arcs inside the square (x0, y0, s)."""
-    cx, cy = x0 + s * 0.43, y0 + s * 0.57          # a little low and left
-    r, w = s * 0.2, s * 0.085
-    d.ellipse((cx - r, cy - r, cx + r, cy + r), outline=CYAN, width=int(w))
-    d.ellipse((cx - s * 0.055, cy - s * 0.055, cx + s * 0.055, cy + s * 0.055), fill=SOFT)
-    for rr in (s * 0.32, s * 0.43):                # two "cast" arcs towards the upper right
-        d.arc((cx - rr, cy - rr, cx + rr, cy + rr), start=-80, end=-10, fill=SOFT, width=int(s * 0.06))
+def n_svg(background=True, grid=False):
+    """NetRing's N logo, redrawn as vectors from the original artwork (240x240 units)."""
+    def pt(a, r=97, cx=119, cy=110):
+        return cx + r * math.cos(math.radians(a)), cy - r * math.sin(math.radians(a))
+    (x1, y1), (x2, y2) = pt(52), pt(220)
+    bg = f'<rect x="-1" y="-10" width="240" height="240" fill="{TILE}"/>' if background else ""
+    if background and grid:
+        bg += '<rect x="-1" y="-10" width="240" height="240" fill="url(#grid)"/>'
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -10 240 240" width="512" height="512">{DEFS}{bg}'
+            '<circle cx="119" cy="110" r="97" fill="none" stroke="url(#nteal)" stroke-width="11"/>'
+            f'<circle cx="{x1:.1f}" cy="{y1:.1f}" r="16" fill="url(#nteal)"/>'
+            f'<circle cx="{x2:.1f}" cy="{y2:.1f}" r="16" fill="url(#nteal)"/>'
+            '<polygon points="72,50 78,50 154,116 154,52 174,70 174,170 72,74" fill="url(#nmetal)"/>'
+            '<polygon points="72,87 92,105 92,171 72,153" fill="url(#nmetal2)"/>'
+            '</svg>')
 
 
-def icon(size):
-    k = 8
-    s = size * k
-    img = Image.new("RGBA", (s, s), NAVY)          # full bleed: the tile colour to every edge
-    mark(ImageDraw.Draw(img), 0, 0, s)
-    return img.resize((size, size), Image.LANCZOS).convert("RGB")
+def logo_svg(background=True, grid=False):
+    """The RingCast Player mark: the N logo's ring and nodes around a faceted metal R whose bowl
+    is a play button (512x512 units)."""
+    def pt(a, r=200, c=256):
+        return c + r * math.cos(math.radians(a)), c - r * math.sin(math.radians(a))
+    (x1, y1), (x2, y2) = pt(58), pt(217)
+    bg = f'<rect width="512" height="512" fill="{TILE}"/>' if background else ""
+    if background and grid:
+        bg += '<rect width="512" height="512" fill="url(#pgrid)"/>'
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">{DEFS}{bg}'
+            '<circle cx="256" cy="256" r="200" fill="none" stroke="url(#teal)" stroke-width="26"/>'
+            f'<circle cx="{x1:.1f}" cy="{y1:.1f}" r="34" fill="url(#teal)"/>'
+            f'<circle cx="{x2:.1f}" cy="{y2:.1f}" r="34" fill="url(#teal)"/>'
+            '<g transform="translate(256 261) scale(1.12) translate(-262 -261)">'
+            '<polygon points="168,196 214,150 214,372 168,372" fill="url(#metal)"/>'
+            '<polygon points="230,150 344,214 230,278" fill="url(#metal2)"/>'
+            '<polygon points="248,292 296,292 352,372 302,372" fill="url(#metal)"/>'
+            '</g></svg>')
 
 
-def font(px):
-    for f in FONTS:
-        if Path(f).exists():
+def render(svg, size):
+    png = cairosvg.svg2png(bytestring=svg.encode(), output_width=size, output_height=size)
+    return Image.open(io.BytesIO(png)).convert("RGBA")
+
+
+def font(px, files=FONTS):
+    for f in files:
+        try:
             return ImageFont.truetype(f, px)
-    raise SystemExit("no font found: install Inter or DejaVu Sans")
+        except OSError:
+            continue
+    return ImageFont.load_default()
 
 
 def splash():
     w, h = 1920, 1080
-    # a soft radial lift from the tile colour towards the panel colour in the middle
-    small = Image.new("RGB", (192, 108))
-    px = small.load()
-    for y in range(108):
-        for x in range(192):
-            dx, dy = (x - 96) / 96.0, (y - 50) / 60.0
-            t = max(0.0, 1.0 - (dx * dx + dy * dy) ** 0.5)
-            px[x, y] = (int(10 + 14 * t), int(26 + 26 * t), int(47 + 38 * t))
-    img = small.resize((w, h), Image.BICUBIC).convert("RGBA")
-    k = 4
-    s = 360
-    m = Image.new("RGBA", (s * k, s * k), (0, 0, 0, 0))
-    mark(ImageDraw.Draw(m), 0, 0, s * k)
-    m = m.resize((s, s), Image.LANCZOS)
-    img.alpha_composite(m, ((w - s) // 2 - 15, 250))    # the ring and arcs centred together
+    img = Image.new("RGBA", (w, h), TILE)
     d = ImageDraw.Draw(img)
-    f = font(96)
-    text = "RingCast"
-    tw = d.textlength(text, font=f)
-    d.text(((w - tw) / 2, 660), text, font=f, fill=SOFT)
+    for x in range(0, w, 48):                      # the faint grid of the NetRing artwork
+        d.line([(x, 0), (x, h)], fill="#0F1A26", width=2)
+    for y in range(0, h, 48):
+        d.line([(0, y), (w, y)], fill="#0F1A26", width=2)
+    s = 400
+    img.alpha_composite(render(logo_svg(background=False), s), ((w - s) // 2, 190))
+    title, sub = "RingCast Player", "by NetRing"
+    ft, fs = font(76), font(38, FONTS_REG)
+    tw = d.textlength(title, font=ft)
+    d.text(((w - tw) / 2, 640), title, font=ft, fill="#D7DBE0")
+    n = 64                                          # the NetRing N next to "by NetRing"
+    sw = d.textlength(sub, font=fs)
+    x0 = (w - (n + 16 + sw)) / 2
+    img.alpha_composite(render(n_svg(background=False), n), (int(x0), 752))
+    d.text((x0 + n + 16, 762), sub, font=fs, fill="#9AA3AC")
     return img.convert("RGB")
 
 
 if __name__ == "__main__":
-    STORE.mkdir(parents=True, exist_ok=True)
-    icon(80).save(APP / "icon.png", optimize=True)
-    icon(130).save(APP / "largeIcon.png", optimize=True)
-    icon(400).save(STORE / "icon-400.png", optimize=True)
-    splash().save(APP / "splash.png", optimize=True)
-    print("wrote app/icon.png, app/largeIcon.png, app/splash.png, docs/store/icon-400.png; tile colour", TILE)
+    BRAND.mkdir(parents=True, exist_ok=True)
+    (BRAND / "ringcast-player-logo.svg").write_text(logo_svg(grid=True) + "\n")
+    (BRAND / "ringcast-player-mark.svg").write_text(logo_svg(background=False) + "\n")
+    (BRAND / "netring-n-logo.svg").write_text(n_svg(grid=True) + "\n")
+    render(logo_svg(background=False), 1024).save(BRAND / "ringcast-player-mark-1024.png", optimize=True)
+    for size, path in ((80, APP / "icon.png"), (130, APP / "largeIcon.png"), (400, STORE / "icon-400.png")):
+        render(logo_svg(), size).convert("RGB").save(path, optimize=True)
+    sp = splash()
+    sp.save(APP / "splash.png", optimize=True)
+    sp.save(STORE / "splash-1920x1080.png", optimize=True)
+    print("done")

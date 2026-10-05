@@ -2,11 +2,12 @@ RingCast Player: LG Content Store listing (Seller Lounge, "Service Info" and "Ap
 ================================================================================
 
 App ID           com.netringtech.ringcast
-Version          0.2.1
-Package          ringcast-webos-0.2.1-lg-tv.ipk (the lg-signage packages are not for the store)
+Version          0.2.2
+Package          ringcast-webos-0.2.2-lg-tv.ipk (the lg-signage packages are not for the store)
 Default language English; Spanish also shipped (the app follows the TV's language)
-App Tile Color   #0A1A2F (dark navy). The icon (icon-400.png) and the app's own icons fill
-                 their square with this colour, so the tile and the icon match.
+App Tile Color   #0A101A (near-black navy, as in the NetRing artwork). The icon (icon-400.png)
+                 and the app's own icons fill their square with this colour, so the tile and
+                 the icon match.
 Resolution       1920x1080
 
 
@@ -101,7 +102,7 @@ What the app needs (for reviewers and for the listing)
 
 Images in this folder
 ---------------------
-icon-400.png                          app icon, 400x400, background #0A1A2F
+icon-400.png                          app icon, 400x400, background #0A101A
 splash-1920x1080.png                  the splash (same file as appinfo.json "splashBackground")
 screenshots/1-playing.png             1920x1080, first: shown on the Apps main screen on webOS 6+
 screenshots/2-pairing.png             1920x1080

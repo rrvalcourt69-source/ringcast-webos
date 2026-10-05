@@ -1,7 +1,7 @@
 RingCast Player: UX scenario (content for LG's UX Scenario template)
 =============================================================
 
-App: RingCast Player (com.netringtech.ringcast) 0.2.1, standard LG webOS TVs, webOS 5 and later
+App: RingCast Player (com.netringtech.ringcast) 0.2.2, standard LG webOS TVs, webOS 5 and later
 Resolution: 1920x1080. Languages: English (default), Spanish (follows the TV's language).
 Copy each section into the matching part of LG's template.
 

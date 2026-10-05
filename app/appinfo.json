@@ -1,6 +1,6 @@
 {
   "id": "com.netringtech.ringcast",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "vendor": "NetRing Tech Services",
   "type": "web",
   "main": "index.html",
@@ -8,8 +8,8 @@
   "icon": "icon.png",
   "largeIcon": "largeIcon.png",
   "splashBackground": "splash.png",
-  "iconColor": "#0a1a2f",
-  "bgColor": "#0a1a2f",
+  "iconColor": "#0a101a",
+  "bgColor": "#0a101a",
   "resolution": "1920x1080",
   "disableBackHistoryAPI": true,
   "requiredACG": [

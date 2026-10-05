@@ -9,19 +9,19 @@ the signage server, not the store).
 Files
   listing.txt              title, short and long descriptions (EN, ES), category, tag
                            keywords, contact details (placeholders), what the app needs,
-                           App Tile Color #0A1A2F
+                           App Tile Color #0A101A
   test-info.txt            Test Info: test URL, test account (placeholders), notes for testers
   ux-scenario.txt          content for LG's UX Scenario template
   self-check.txt           answers for LG's self-check list (Pass / N/A with reasons)
   uk-data-disclosure.txt   answers for the UK data disclosure
   privacy-policy.txt       privacy policy text to publish at
                            https://netringtech.com/signage/privacy (confirm the address)
-  icon-400.png             app icon, 400x400, background #0A1A2F
+  icon-400.png             app icon, 400x400, background #0A101A
   splash-1920x1080.png     splash image (the app's appinfo.json "splashBackground")
   screenshots/             five 1920x1080 screenshots; 1-playing.png first (webOS 6+ shows
                            the first one on the Apps main screen)
 
-Seller Lounge: choose #0A1A2F as the App Tile Color, so it matches the icon.
+Seller Lounge: choose #0A101A as the App Tile Color, so it matches the icon.
 
 Placeholders to fill in before submitting (search for "<"): support e-mail, website and
 privacy policy addresses, test account and password, publication date of the policy.

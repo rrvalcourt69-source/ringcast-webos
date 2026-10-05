@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -10 240 240" width="512" height="512"><defs>
+<linearGradient id="teal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12909B"/><stop offset="1" stop-color="#0B6F79"/></linearGradient>
+<linearGradient id="nteal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0A6670"/><stop offset="1" stop-color="#08545C"/></linearGradient>
+<linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8A8F96"/><stop offset=".55" stop-color="#5E636B"/><stop offset="1" stop-color="#454A52"/></linearGradient>
+<linearGradient id="nmetal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#606368"/><stop offset="1" stop-color="#474B52"/></linearGradient>
+<linearGradient id="metal2" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7C8189"/><stop offset="1" stop-color="#4C5159"/></linearGradient>
+<linearGradient id="nmetal2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5A5E64"/><stop offset="1" stop-color="#454950"/></linearGradient>
+<pattern id="grid" width="15" height="15" patternUnits="userSpaceOnUse"><path d="M15 0H0V15" fill="none" stroke="#0F1822" stroke-width="1"/></pattern>
+<pattern id="pgrid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#0F1A26" stroke-width="2"/></pattern>
+</defs><rect x="-1" y="-10" width="240" height="240" fill="#0A101A"/><rect x="-1" y="-10" width="240" height="240" fill="url(#grid)"/><circle cx="119" cy="110" r="97" fill="none" stroke="url(#nteal)" stroke-width="11"/><circle cx="178.7" cy="33.6" r="16" fill="url(#nteal)"/><circle cx="44.7" cy="172.4" r="16" fill="url(#nteal)"/><polygon points="72,50 78,50 154,116 154,52 174,70 174,170 72,74" fill="url(#nmetal)"/><polygon points="72,87 92,105 92,171 72,153" fill="url(#nmetal2)"/></svg>
