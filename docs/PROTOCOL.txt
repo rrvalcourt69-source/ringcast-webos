@@ -1,4 +1,4 @@
-# RingCast device protocol: version 1 (draft 3)
+# RingCast device protocol: version 1 (draft 4)
 
 How a RingCast Player (screen) pairs with and talks to a server. Both servers
 implement it identically: **RingCast.io** (hosted) and **RingCast Manager**
@@ -13,6 +13,7 @@ same version.
 | 1 | 2026-10-02 | First version (replaces `PAIRING_FLOW.txt`) |
 | 3 | 2026-10-04 | LG webOS screens: `platform` and `capabilities`, pairing without a MAC address, CORS for app-based clients, the player in an app frame and its start status message to the app (§5.3), server-side control of standard LG TVs (§9) with the TV's certificate pinned at pairing and the client key sent only to that certificate (plain port 3000 only for TVs paired over it). Pis and older servers are unaffected. |
 | 3 | 2026-10-05 | Wording only: the product names are now RingCast Manager (self-hosted server) and RingCast Player (screen software). Nothing on the wire changed; `server_name` was always free text. |
+| 4 | 2026-10-07 | Display power: the check-in answer may carry `display_power` (`on`/`off`, from the server's screen on/off times; absent when none apply) and the check-in may report `display.power` and `display.power_method` (§5.1). Older players ignore the field and older servers the report. |
 | 2 | 2026-10-02 | Security review fixes (two review rounds): signed pairing request, token issued at first signed poll and stored only as a hash, key-signed token renewal/recovery, two-step claim with mandatory MAC suffix and longer cloud codes, name-constrained private CA for self-hosted servers, signed client updates, command delivery rules, token and key moved to `/var/lib/ringcast`, separate web-engine user |
 
 ---
@@ -207,7 +208,7 @@ Only these fields are accepted (others are ignored; wrong types give `400`):
 | `uptime_s`, `disk_free_mb` | integer | ≥ 0 |
 | `temp_c` | number | |
 | `ip` | string | 64 chars |
-| `display` | object `{width, height, orientation}` | integers; orientation one of `landscape`, `portrait_cw`, `portrait_ccw` |
+| `display` | object `{width, height, orientation, power, power_method}` | integers; orientation one of `landscape`, `portrait_cw`, `portrait_ccw`; `power` `on`/`off` and `power_method` `cec`/`blank` (draft 4): what the player did about `display_power` |
 | `manifest_version`, `current_item` | string | 64 chars |
 | `errors` | list of strings | 20 items × 300 chars |
 | `capabilities` | list of strings | as in §3.1; replaces the list sent at pairing (an app update can add commands) |
@@ -221,6 +222,13 @@ Only these fields are accepted (others are ignored; wrong types give `400`):
 
 Clients clamp `checkin_interval_s` to 10–600. The server marks a device offline after 3 missed
 intervals.
+
+`display_power` (draft 4), present only when the server's screen on/off times cover this screen:
+`"off"` asks the player to turn the display off: send HDMI-CEC standby to the TV when it can,
+and in any case stop showing content (black); keep checking in and handling commands. `"on"`
+asks it to wake the TV (CEC image view on) and play again. An active emergency always answers
+`"on"`. The player acts on a change of the value, not on every check-in, and reports the state
+and how it got there in `display.power` / `display.power_method`.
 
 ### 5.2 Commands
 
@@ -275,7 +283,7 @@ fd-based access). To be specified with the player agent.
 - **LG webOS** has a single web engine: the app (the agent) shows the player page in a full-screen
   frame. The app's own page is not on the server's site, so for `lg-signage` and `lg-tv` screens
   the player cookie is set with `SameSite=None; Secure` instead of `Strict` (still `HttpOnly` and
-  scoped to `/api/device/v1/play/`, whose endpoints only read). The app holds the key and token;
+  scoped to `/api/device/v1/play/`, whose endpoints only read, apart from `play/plays` below, which accepts only `application/json` and so can't be sent cross-site without a CORS preflight the server never grants). The app holds the key and token;
   the framed player page can't read them (different origin). *To be confirmed on a real display
   before release; the fallback is a session carried in the player URL path.*
 - **Player status to the frame.** When the player page runs in a frame (`window.parent !== window`)
@@ -288,6 +296,11 @@ fd-based access). To be specified with the player agent.
   `403` with a small HTML page that shows a message and posts the error. targetOrigin is `*`: the
   messages carry no secrets. The app should accept them only from its player frame (`event.source`) and
   start a new player session on `error`. At top level (Raspberry Pi) nothing is posted.
+- **Proof of play** (draft 4). The player page sends what it showed to `POST /api/device/v1/play/plays`
+  (player cookie, `Content-Type: application/json`): `{"plays": [{"m": <media id or null>, "n": "<name>",
+  "p": "<playlist>", "t": <start, UTC ms>, "ms": <duration>}, ...]}`, at most 200 per request, about once a
+  minute. Manifest items carry `mid` (the media item's id) and the manifest `playlist` (its name) for this. The
+  page is served by the server, so players need no change; old servers simply don't ask for it.
 - Allowed content URL schemes: `https:`, plus `http:` for items an admin added explicitly.
   Never `javascript:`, `data:`, `file:`.
 - `GET /api/device/v1/time` (no auth) → `{"t": <server ms>}` for synchronised playback.
