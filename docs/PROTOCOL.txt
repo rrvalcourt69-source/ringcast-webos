@@ -301,6 +301,10 @@ fd-based access). To be specified with the player agent.
   "p": "<playlist>", "t": <start, UTC ms>, "ms": <duration>}, ...]}`, at most 200 per request, about once a
   minute. Manifest items carry `mid` (the media item's id) and the manifest `playlist` (its name) for this. The
   page is served by the server, so players need no change; old servers simply don't ask for it.
+- **Video walls** (draft 4). A screen that is part of a wall gets `"wall": {"cols", "rows", "col", "row", "gap"}`
+  in its manifest; the server's player page draws the content cols x rows screens large (plus `gap` pixels
+  per frame between screens) and shows only that screen's cell. Players that draw content themselves and
+  don't know the field show the whole picture.
 - Allowed content URL schemes: `https:`, plus `http:` for items an admin added explicitly.
   Never `javascript:`, `data:`, `file:`.
 - `GET /api/device/v1/time` (no auth) → `{"t": <server ms>}` for synchronised playback.
