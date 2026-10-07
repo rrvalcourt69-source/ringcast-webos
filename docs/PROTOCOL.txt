@@ -306,6 +306,9 @@ fd-based access). To be specified with the player agent.
   the server can't be reached and nothing is on screen (a restart during an outage), the agent opens
   `play/start?s=offline-<random>` itself: offline, the service worker answers with the kept page; online,
   the server refuses the made-up code (403) and the agent's next real session replaces it.
+- **Sound** (draft 4). The manifest's `volume` (0-100, or null: muted) says how loud videos play now;
+  it is not part of `version`, so a change doesn't restart what is playing. Players that don't know it
+  keep videos muted.
 - **Video walls** (draft 4). A screen that is part of a wall gets `"wall": {"cols", "rows", "col", "row", "gap"}`
   in its manifest; the server's player page draws the content cols x rows screens large (plus `gap` pixels
   per frame between screens) and shows only that screen's cell. Players that draw content themselves and
