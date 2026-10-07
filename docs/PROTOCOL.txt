@@ -301,6 +301,11 @@ fd-based access). To be specified with the player agent.
   "p": "<playlist>", "t": <start, UTC ms>, "ms": <duration>}, ...]}`, at most 200 per request, about once a
   minute. Manifest items carry `mid` (the media item's id) and the manifest `playlist` (its name) for this. The
   page is served by the server, so players need no change; old servers simply don't ask for it.
+- **Offline playback** (draft 4). The player page registers a service worker (`play/sw.js`, scope
+  `/api/device/v1/play/`) that keeps the page, the manifest and the manifest's pictures and videos. When
+  the server can't be reached and nothing is on screen (a restart during an outage), the agent opens
+  `play/start?s=offline-<random>` itself: offline, the service worker answers with the kept page; online,
+  the server refuses the made-up code (403) and the agent's next real session replaces it.
 - **Video walls** (draft 4). A screen that is part of a wall gets `"wall": {"cols", "rows", "col", "row", "gap"}`
   in its manifest; the server's player page draws the content cols x rows screens large (plus `gap` pixels
   per frame between screens) and shows only that screen's cell. Players that draw content themselves and
