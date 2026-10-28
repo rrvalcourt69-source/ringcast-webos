@@ -1,4 +1,4 @@
-# RingCast device protocol: version 1 (draft 4)
+# RingCast device protocol: version 1 (draft 5)
 
 How a RingCast Player (screen) pairs with and talks to a server. Both servers
 implement it identically: **RingCast.io** (hosted) and **RingCast Manager**
@@ -14,6 +14,7 @@ same version.
 | 3 | 2026-10-04 | LG webOS screens: `platform` and `capabilities`, pairing without a MAC address, CORS for app-based clients, the player in an app frame and its start status message to the app (§5.3), server-side control of standard LG TVs (§9) with the TV's certificate pinned at pairing and the client key sent only to that certificate (plain port 3000 only for TVs paired over it). Pis and older servers are unaffected. |
 | 3 | 2026-10-05 | Wording only: the product names are now RingCast Manager (self-hosted server) and RingCast Player (screen software). Nothing on the wire changed; `server_name` was always free text. |
 | 4 | 2026-10-07 | Display power: the check-in answer may carry `display_power` (`on`/`off`, from the server's screen on/off times; absent when none apply) and the check-in may report `display.power` and `display.power_method` (§5.1). Older players ignore the field and older servers the report. |
+| 5 | 2026-10-28 | Player sessions slide: each manifest request of the player page keeps its session alive (the cookie is sent again about once an hour), so players no longer restart their web engine to renew it; the check-in answer carries `player_seen_s` (§5.1) and players use it to notice a page that stopped loading. New commands `tv_on` and `tv_off` (§5.2), only for screens that list them in `capabilities`. Older players ignore the field and never list the commands; older servers never send either. |
 | 2 | 2026-10-02 | Security review fixes (two review rounds): signed pairing request, token issued at first signed poll and stored only as a hash, key-signed token renewal/recovery, two-step claim with mandatory MAC suffix and longer cloud codes, name-constrained private CA for self-hosted servers, signed client updates, command delivery rules, token and key moved to `/var/lib/ringcast`, separate web-engine user |
 
 ---
@@ -109,8 +110,11 @@ Device                                   Server                          Admin (
   (standard LG webOS TV). Unknown values give `400 bad_request`.
 - `capabilities` (optional): the command types of §5.2 the screen can carry out, at most 20
   strings of at most 32 characters; unknown types are ignored. Without it, a `pi` screen can do
-  every command and any other platform only `refresh`, `restart_player`, `set_orientation` and
-  `unpair`. The server never queues a command the screen can't do.
+  the commands of draft 1 (`reboot`, `restart_player`, `refresh`, `screenshot`, `update_client`,
+  `set_orientation`, `unpair`, `set_server`) and any other platform only `refresh`,
+  `restart_player`, `set_orientation` and `unpair`. Commands added in later drafts (`tv_on`,
+  `tv_off`) are never assumed: a screen gets them only by listing them. The server never queues a
+  command the screen can't do.
 - `mac_address` is required for `pi`. Other platforms send it when the platform reveals it; when
   they can't, they leave it out and the code suffix comes from the key instead (below).
 - `tier` is free text of at most 10 characters for non-Pi platforms (for example `webos5`);
@@ -223,6 +227,13 @@ Only these fields are accepted (others are ignored; wrong types give `400`):
 Clients clamp `checkin_interval_s` to 10–600. The server marks a device offline after 3 missed
 intervals.
 
+`player_seen_s` (draft 5), always present from draft-5 servers: seconds since this screen's
+player page last requested `play/manifest` with its session cookie, or `null` while the server
+doesn't know yet (it has only just started). Its presence also says the server keeps player
+sessions alive while the page uses them (§5.3), so the player doesn't renew them on a timer. A
+player whose web engine is running but whose `player_seen_s` stays above a few minutes starts a
+new player session (the page stopped loading); the dashboard shows such a screen as "not showing".
+
 `display_power` (draft 4), present only when the server's screen on/off times cover this screen:
 `"off"` asks the player to turn the display off: send HDMI-CEC standby to the TV when it can,
 and in any case stop showing content (black); keep checking in and handling commands. `"on"`
@@ -233,7 +244,15 @@ and how it got there in `display.power` / `display.power_method`.
 ### 5.2 Commands
 
 `reboot`, `restart_player`, `refresh`, `screenshot`, `update_client`, `set_orientation
-{orientation}`, `unpair`, `set_server {mode, hostname, tls, ca_sha256}`.
+{orientation}`, `unpair`, `set_server {mode, hostname, tls, ca_sha256}`, and (draft 5) `tv_on`,
+`tv_off`.
+
+`tv_on` / `tv_off` (draft 5) turn the TV on or put it in standby over HDMI-CEC, now, without
+changing what the player shows (on: image view on, the remote's power-on key and this screen as
+the active source; off: standby). The result is `ok: false` when the TV didn't acknowledge the
+command (CEC switched off in the TV's menu, or no CEC adapter). They don't change the on/off
+times: the next `display_power` change applies as usual. A Pi lists them only when it has a CEC
+adapter and `cec-ctl`.
 
 The server queues only commands in the screen's `capabilities` (`409 not_supported` otherwise).
 LG apps are updated by the LG store or the display's SI Server (`/lg/`), never by `update_client`.
@@ -279,7 +298,13 @@ fd-based access). To be specified with the player agent.
   `{"url": "https://…/api/device/v1/play/start?s=<one-time>", "expires_in_s": 86400}`. Opening the
   URL sets an `HttpOnly; Secure; SameSite=Strict` cookie scoped to `/api/device/v1/play/` and
   redirects to the player page; its manifest polling and media requests use that cookie. The agent
-  renews the session before it expires.
+  renews the session before it expires. Draft 5: the server extends the session to a full
+  `expires_in_s` again when the page requests `play/manifest` and less than 23 hours are left
+  (sending the cookie again with that response), so a session the page keeps using never expires
+  and the agent only starts a new one when the web engine exits, the page stops loading
+  (`player_seen_s`, §5.1) or a `refresh` asks for it. Restarting a web engine is the riskiest thing
+  a screen does (on some graphics drivers a closing engine can hang in the kernel and keep the
+  display), so players avoid doing it on a timer.
 - **LG webOS** has a single web engine: the app (the agent) shows the player page in a full-screen
   frame. The app's own page is not on the server's site, so for `lg-signage` and `lg-tv` screens
   the player cookie is set with `SameSite=None; Secure` instead of `Strict` (still `HttpOnly` and
