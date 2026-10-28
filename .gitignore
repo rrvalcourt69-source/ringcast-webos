@@ -7,3 +7,7 @@ dist/
 *.token
 secrets/
 .claude/
+test-output/
+__pycache__/
+build/
+tools/lg-cli/

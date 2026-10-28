@@ -1,0 +1,15 @@
+{
+  "name": "ringcast-webos",
+  "private": true,
+  "description": "Development tools for RingCast Player for LG webOS displays (the app itself has no build step).",
+  "license": "AGPL-3.0-only",
+  "devDependencies": {
+    "@webos-tools/cli": "^3.2.6",
+    "acorn": "^8.18.0",
+    "tweetnacl": "^1.0.3"
+  },
+  "scripts": {
+    "test": "node tests/run.js",
+    "check": "node tests/check_compat.js"
+  }
+}
