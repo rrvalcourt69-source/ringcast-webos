@@ -12,6 +12,11 @@ Files
                            App Tile Color #0A101A
   test-info.txt            Test Info: test URL, test account (placeholders), notes for testers
   ux-scenario.txt          content for LG's UX Scenario template
+  submit/RingCast-Player-UX-Scenario-1.0.0-r2.pdf
+                           the UX scenario as uploaded (LG's template 4.4: basic information,
+                           a real image of every screen with numbered elements, flow chart,
+                           remote keys, test procedure). LG's QA needs actual app images: a
+                           text-only scenario was rejected (QA2026100824184, 2026-10)
   self-check.txt           answers for LG's self-check list (Pass / N/A with reasons)
   uk-data-disclosure.txt   answers for the UK data disclosure
   privacy-policy.txt       privacy policy text to publish at
@@ -32,3 +37,12 @@ Regenerating the images
     RINGCAST_APP_DIR=build/lg-tv/check/usr/palm/applications/com.netringtech.ringcast \
       python3 tests/e2e_screens.py <folder>
   and copy 4-playing, 2-pairing, 3-claimed, 1-address and 1-address-es from <folder>.
+
+Rebuilding the UX scenario (PowerPoint, then PDF)
+  RINGCAST_APP_DIR=build/lg-tv/check/usr/palm/applications/com.netringtech.ringcast \
+    python3 tests/store_shots.py <folder>
+  copy splash-1920x1080.png and RingCast Manager's dashboard pictures 01-sign-in-dialog.png,
+  07-add-screen-code-dialog.png, 08-add-screen-confirm-dialog.png (its tools/capture_screens.py,
+  en-light, after tools/crop_screens.py) into <folder>, then
+    node tools/make_ux_scenario.js <folder> RingCast-Player-UX-Scenario-<version>.pptx
+  and export it to PDF. Update the dates and the Document History rows in the script first.
